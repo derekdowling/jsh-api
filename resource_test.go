@@ -17,6 +17,16 @@ func TestResource(t *testing.T) {
 		server := httptest.NewServer(resource)
 		baseURL := server.URL
 
+		Convey("->Matcher()", func() {
+			resource.prefix = "api"
+			So(resource.Matcher(), ShouldEqual, "/api/tests")
+		})
+
+		Convey("->IDMatcher()", func() {
+			resource.prefix = "api"
+			So(resource.IDMatcher(), ShouldEqual, "/api/tests/:id")
+		})
+
 		Convey("->Post()", func() {
 
 			object := testObject()
@@ -31,24 +41,23 @@ func TestResource(t *testing.T) {
 			So(obj.ID, ShouldEqual, "1")
 		})
 
-		Convey("->Get()", func() {
+		Convey("->List()", func() {
 			resp, err := jsc.Get(baseURL, "test", "")
 			So(err, ShouldBeNil)
 
-			obj, err := resp.GetObject()
-			log.Printf("err.String() = %+v\n", err.String())
+			list, err := resp.GetList()
 			So(err, ShouldBeNil)
 
-			testObj := testObject()
-			testObj.ID = "1"
-			So(obj, ShouldResemble, testObj)
+			So(len(list), ShouldEqual, 2)
+			So(list[0].ID, ShouldEqual, "1")
 		})
 
-		Convey("->Get(id)", func() {
+		Convey("->Get()", func() {
 			resp, err := jsc.Get(baseURL, "test", "3")
 			So(err, ShouldBeNil)
 
 			obj, err := resp.GetObject()
+			log.Printf("err.String() = %+v\n", err.String())
 			So(err, ShouldBeNil)
 
 			testObj := testObject()

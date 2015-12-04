@@ -35,9 +35,9 @@ func NewResource(prefix string, name string, storage Storage) *Resource {
 
 	// setup resource sub-router
 	r.Mux.Post(r.Matcher(), r.Post)
+	r.Mux.Get(r.IDMatcher(), r.Get)
 	r.Mux.Get(r.Matcher(), r.List)
 	r.Mux.Delete(r.IDMatcher(), r.Delete)
-	r.Mux.Get(r.IDMatcher(), r.Get)
 	r.Mux.Patch(r.IDMatcher(), r.Patch)
 
 	return r
@@ -62,6 +62,7 @@ func (res *Resource) Post(c web.C, w http.ResponseWriter, r *http.Request) {
 
 // Get => GET /resources/:id
 func (res *Resource) Get(c web.C, w http.ResponseWriter, r *http.Request) {
+	log.Printf("r.URL = %+v\n", r.URL)
 	id, exists := c.URLParams["id"]
 	if !exists {
 		res.sendAndLog(c, w, r, jsh.ISE(fmt.Sprintf("Unable to parse resource ID from path: %s", r.URL.Path)))
@@ -79,6 +80,7 @@ func (res *Resource) Get(c web.C, w http.ResponseWriter, r *http.Request) {
 
 // List => GET /resources
 func (res *Resource) List(c web.C, w http.ResponseWriter, r *http.Request) {
+	log.Printf("r.URL = %+v\n", r.URL)
 	list, err := res.storage.List()
 	if err != nil {
 		res.sendAndLog(c, w, r, err)

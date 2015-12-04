@@ -39,7 +39,12 @@ func testResource() *Resource {
 }
 
 func testObject() *jsh.Object {
-	object, err := jsh.NewObject("1", testType, nil)
+
+	attrs := map[string]string{
+		"foo": "bar",
+	}
+
+	object, err := jsh.NewObject("1", testType, attrs)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

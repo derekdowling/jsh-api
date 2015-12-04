@@ -9,17 +9,17 @@ import (
 	"github.com/zenazn/goji/web"
 )
 
-// Handler is used to direct HTTP requests to resources
-type Handler struct {
+// API is used to direct HTTP requests to resources
+type API struct {
 	resources []*resource
 	Prefix    string
 	Logger    *log.Logger
 	Mux       *web.Mux
 }
 
-// NewHandler initializes a Handler object
-func NewHandler(prefix string) *Handler {
-	return &Handler{
+// New initializes a Handler object
+func New(prefix string) *API {
+	return &API{
 		resources: []*resource{},
 		Prefix:    prefix,
 		Logger:    log.New(os.Stdout, "jshapi: ", log.Ldate|log.Ltime|log.Lshortfile),
@@ -28,19 +28,19 @@ func NewHandler(prefix string) *Handler {
 }
 
 // Handle is an http.Handle compatible function that should be used to passed the
-// jshapi Handler into a router
-func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
-	h.Mux.ServeHTTP(w, r)
+// jshapi API into a router
+func (a *API) Handle(w http.ResponseWriter, r *http.Request) {
+	a.Mux.ServeHTTP(w, r)
 }
 
-// AddResource adds a new resource of type "name" to the handler's router
-func (h *Handler) AddResource(name string, storage Storage) {
+// AddResource adds a new resource of type "name" to the API's router
+func (a *API) AddResource(name string, storage Storage) {
 
 	resource := &resource{
 		Type:    name,
 		Storage: storage,
-		Logger:  h.Logger,
-		Prefix:  h.Prefix,
+		Logger:  a.Logger,
+		Prefix:  a.Prefix,
 		mux:     web.New(),
 	}
 
@@ -54,8 +54,8 @@ func (h *Handler) AddResource(name string, storage Storage) {
 	resource.mux.Get(pluralSelecter, resource.Get)
 	resource.mux.Patch(pluralSelecter, resource.Patch)
 
-	h.resources = append(h.resources, resource)
+	a.resources = append(a.resources, resource)
 
-	// Add subrouter to main Handler mux
-	h.Mux.Handle(plural+"/*", resource.mux)
+	// Add subrouter to main API mux
+	a.Mux.Handle(plural+"/*", resource.mux)
 }

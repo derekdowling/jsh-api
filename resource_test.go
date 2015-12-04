@@ -1,6 +1,7 @@
 package jshapi
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -31,9 +32,9 @@ func TestResource(t *testing.T) {
 		})
 
 		Convey("->Post()", func() {
-
 			object := sampleObject("", "test", attrs)
 			resp, err := jsc.Post(baseURL, object)
+			So(resp.StatusCode, ShouldEqual, http.StatusCreated)
 			So(err, ShouldBeNil)
 
 			obj, err := resp.GetObject()
@@ -44,6 +45,7 @@ func TestResource(t *testing.T) {
 
 		Convey("->List()", func() {
 			resp, err := jsc.Get(baseURL, "test", "")
+			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			So(err, ShouldBeNil)
 
 			list, err := resp.GetList()
@@ -55,11 +57,29 @@ func TestResource(t *testing.T) {
 
 		Convey("->Get()", func() {
 			resp, err := jsc.Get(baseURL, "test", "3")
+			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			So(err, ShouldBeNil)
 
 			obj, err := resp.GetObject()
 			So(err, ShouldBeNil)
 			So(obj.ID, ShouldEqual, "3")
+		})
+
+		Convey("->Patch()", func() {
+			object := sampleObject("1", "test", attrs)
+			resp, err := jsc.Patch(baseURL, object)
+			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			So(err, ShouldBeNil)
+
+			obj, err := resp.GetObject()
+			So(err, ShouldBeNil)
+			So(obj.ID, ShouldEqual, "1")
+		})
+
+		Convey("->Delete()", func() {
+			resp, err := jsc.Delete(baseURL, "test", "1")
+			So(err, ShouldBeNil)
+			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 		})
 	})
 }

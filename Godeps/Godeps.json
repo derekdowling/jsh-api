@@ -2,7 +2,7 @@
 	"ImportPath": "github.com/derekdowling/jsh-api",
 	"GoVersion": "go1.5.1",
 	"Packages": [
-		"./..."
+		"github.com/derekdowling/jsh-api"
 	],
 	"Deps": [
 		{
@@ -12,8 +12,22 @@
 		},
 		{
 			"ImportPath": "github.com/derekdowling/go-json-spec-handler",
-			"Comment": "0.4.1-13-g1f7a8b1",
-			"Rev": "1f7a8b1ade47ba7ee5eee542001c77a5e74a5797"
+			"Comment": "0.5.1",
+			"Rev": "9b13192ebbe056f3e3853f2816b1d8dc1d4ca8bf"
+		},
+		{
+			"ImportPath": "github.com/jtolds/gls",
+			"Rev": "9a4a02dbe491bef4bab3c24fd9f3087d6c4c6690"
+		},
+		{
+			"ImportPath": "github.com/smartystreets/assertions",
+			"Comment": "1.5.0-389-g507a61a",
+			"Rev": "507a61adbdc8674907f6e491b559d600a4127dc0"
+		},
+		{
+			"ImportPath": "github.com/smartystreets/goconvey/convey",
+			"Comment": "1.5.0-398-gab7641a",
+			"Rev": "ab7641a0db76b0e88765294b1377b026ec01f26b"
 		},
 		{
 			"ImportPath": "github.com/zenazn/goji/web",

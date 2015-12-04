@@ -37,7 +37,9 @@ PATCH /resources/:id
 
 ## Implementing a Storage Driver with jsh
 
-Below is a simple example of how you might implement your Storage handle using
+Below is a simple example of how you might implement the required 
+[Storage Driver](https://godoc.org/github.com/derekdowling/jsh-api#Storage) for a
+given resource using
 [jsh](https://godoc.org/github.com/derekdowling/go-json-spec-handler) for Save
 and Patch. This should give you a pretty good idea of how easy it is to
 implement the Storage driver with jsh.

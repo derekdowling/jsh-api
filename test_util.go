@@ -33,7 +33,7 @@ func (m *MockStorage) Get(id string) (*jsh.Object, jsh.SendableError) {
 
 // List returns a sample list
 func (m *MockStorage) List() (jsh.List, jsh.SendableError) {
-	return m.SampleList(2), nil
+	return m.SampleList(m.ListCount), nil
 }
 
 // Patch does nothing

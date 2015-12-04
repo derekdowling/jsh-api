@@ -13,7 +13,7 @@ func TestAPI(t *testing.T) {
 		api := New("")
 
 		Convey("->AddResource()", func() {
-			resource := testResource()
+			resource := NewMockResource("", "test", 1, nil)
 			api.AddResource(resource)
 
 			So(api.Resources["test"], ShouldEqual, resource)

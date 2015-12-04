@@ -1,7 +1,6 @@
 package jshapi
 
 import (
-	"log"
 	"net/http/httptest"
 	"testing"
 
@@ -13,7 +12,11 @@ func TestResource(t *testing.T) {
 
 	Convey("Resource Tests", t, func() {
 
-		resource := testResource()
+		attrs := map[string]string{
+			"foo": "bar",
+		}
+
+		resource := NewMockResource("", "test", 2, attrs)
 		server := httptest.NewServer(resource)
 		baseURL := server.URL
 
@@ -29,9 +32,7 @@ func TestResource(t *testing.T) {
 
 		Convey("->Post()", func() {
 
-			object := testObject()
-			object.ID = "2"
-
+			object := sampleObject("", "test", attrs)
 			resp, err := jsc.Post(baseURL, object)
 			So(err, ShouldBeNil)
 
@@ -57,12 +58,8 @@ func TestResource(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			obj, err := resp.GetObject()
-			log.Printf("err.String() = %+v\n", err.String())
 			So(err, ShouldBeNil)
-
-			testObj := testObject()
-			testObj.ID = "3"
-			So(obj, ShouldResemble, testObj)
+			So(obj.ID, ShouldEqual, "3")
 		})
 	})
 }

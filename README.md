@@ -13,13 +13,24 @@ rest.
 import github.com/derekdowling/jsh-api
 
 // can specify an api prefix(/prefix/resources) or leave blank
-api := jshapi.New("")
+api := jshapi.New("<prefix>")
+
+// set a logger besides os.Stdout if you want
+api.Logger = yourLogger
 
 // implement the jshapi.Storage interface, then:
 userStorage := &UserStorage{}
-api.AddResource("user", userStorage)
+resource := jshapi.NewResource("<prefix>", "user", userStorage)
+resource.Insert(yourUserMiddleware)
 
-yourRouter.Handle(api.Handle)
+// add resources to the API
+api.AddResource(resource)
+
+// API middleware
+api.Use(yourTopLevelAPIMiddleware)
+
+// add API to top level router
+yourRouter.Handle("<prefix>/*", api.ServeHTTP)
 ```
 
 ## What It Handles
@@ -62,7 +73,7 @@ func Save(object *jsh.Object) jsh.SendableError {
     user.ID = "1234"
 
     // do save logic
-    return
+    return nil
 }
 
 func Patch(object *jsh.Object) jsh.SendableError {
@@ -76,6 +87,6 @@ func Patch(object *jsh.Object) jsh.SendableError {
     id := object.ID
 
     // perform patch
-    return
+    return nil
 }
 ```

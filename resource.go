@@ -24,7 +24,6 @@ type resource struct {
 
 // Post => POST /resources
 func (res *resource) Post(c web.C, w http.ResponseWriter, r *http.Request) {
-
 	object, err := jsh.ParseObject(r)
 	if err != nil {
 		res.sendAndLog(c, w, r, err)
@@ -103,7 +102,6 @@ func (res *resource) Patch(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 func (res *resource) sendAndLog(c web.C, w http.ResponseWriter, r *http.Request, sendable jsh.Sendable) {
-
 	jshErr, isType := sendable.(*jsh.Error)
 	if isType && jshErr.Status == http.StatusInternalServerError {
 		res.Logger.Printf("JSH ISE: %s-%s", jshErr.Title, jshErr.Detail)

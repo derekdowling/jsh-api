@@ -125,13 +125,14 @@ func (res *Resource) Patch(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 func (res *Resource) sendAndLog(c web.C, w http.ResponseWriter, r *http.Request, sendable jsh.Sendable) {
-	jshErr, isType := sendable.(*jsh.Error)
-	if isType && jshErr.Status == http.StatusInternalServerError {
-		res.Logger.Printf("JSH ISE: %s-%s", jshErr.Title, jshErr.Detail)
+
+	response, err := sendable.Prepare(r, true)
+	if err != nil && response.HTTPStatus == http.StatusInternalServerError {
+		res.Logger.Printf("Error: %s", err.Internal())
 	}
 
-	err := jsh.Send(w, r, sendable)
-	if err != nil {
+	sendErr := jsh.SendResponse(w, r, response)
+	if sendErr != nil {
 		res.Logger.Print(err.Error())
 	}
 }

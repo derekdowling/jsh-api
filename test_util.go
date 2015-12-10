@@ -39,8 +39,8 @@ func (m *MockStorage) List(ctx context.Context) (jsh.List, jsh.SendableError) {
 	return m.SampleList(m.ListCount), nil
 }
 
-// Patch does nothing
-func (m *MockStorage) Patch(ctx context.Context, object *jsh.Object) jsh.SendableError {
+// Update does nothing
+func (m *MockStorage) Update(ctx context.Context, object *jsh.Object) jsh.SendableError {
 	return nil
 }
 
@@ -90,7 +90,10 @@ func NewMockResource(prefix string, resourceType string, listCount int, sampleOb
 		ListCount:          listCount,
 	}
 
-	return NewResource("", resourceType, mock)
+	resource := NewCRUDResource(resourceType, mock)
+	resource.prefix = prefix
+
+	return resource
 }
 
 func sampleObject(id string, resourceType string, sampleObject interface{}) *jsh.Object {

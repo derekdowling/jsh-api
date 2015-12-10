@@ -10,12 +10,13 @@ func TestAPI(t *testing.T) {
 
 	Convey("API Tests", t, func() {
 
-		api := New("")
+		api := New("foo")
 
 		Convey("->AddResource()", func() {
 			resource := NewMockResource("", "test", 1, nil)
 			api.AddResource(resource)
 
+			So(resource.prefix, ShouldEqual, "/foo")
 			So(api.Resources["test"], ShouldEqual, resource)
 		})
 	})

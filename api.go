@@ -1,8 +1,10 @@
 package jshapi
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"goji.io"
 	"goji.io/pat"
@@ -18,6 +20,11 @@ type API struct {
 
 // New initializes a Handler object
 func New(prefix string) *API {
+
+	if len(prefix) > 0 && !strings.HasPrefix(prefix, "/") {
+		prefix = fmt.Sprintf("/%s", prefix)
+	}
+
 	return &API{
 		Mux:       goji.NewMux(),
 		prefix:    prefix,
@@ -30,11 +37,11 @@ func New(prefix string) *API {
 func (a *API) AddResource(resource *Resource) {
 
 	// add prefix and logger
-	resource.Prefix = a.prefix
+	resource.prefix = a.prefix
 	resource.Logger = a.Logger
 
-	a.Resources[resource.Name] = resource
+	a.Resources[resource.Type] = resource
 
 	// Add subrouter to main API mux, use Matcher plus catch all
-	a.Mux.Handle(pat.New(resource.Matcher()+"*"), resource.Mux)
+	a.Mux.HandleC(pat.New(resource.Matcher()+"*"), resource)
 }

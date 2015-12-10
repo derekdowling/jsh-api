@@ -80,7 +80,7 @@ func (res *Resource) Post(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = res.Storage.Save(object)
+	err = res.Storage.Save(ctx, object)
 	if err != nil {
 		res.sendAndLog(ctx, w, r, err)
 		return
@@ -93,7 +93,7 @@ func (res *Resource) Post(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (res *Resource) Get(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	id := pat.Param(ctx, "id")
 
-	object, err := res.Storage.Get(id)
+	object, err := res.Storage.Get(ctx, id)
 	if err != nil {
 		res.sendAndLog(ctx, w, r, err)
 		return
@@ -104,7 +104,7 @@ func (res *Resource) Get(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 // List => GET /resources
 func (res *Resource) List(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	list, err := res.Storage.List()
+	list, err := res.Storage.List(ctx)
 	if err != nil {
 		res.sendAndLog(ctx, w, r, err)
 		return
@@ -117,7 +117,7 @@ func (res *Resource) List(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (res *Resource) Delete(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	id := pat.Param(ctx, "id")
 
-	err := res.Storage.Delete(id)
+	err := res.Storage.Delete(ctx, id)
 	if err != nil {
 		res.sendAndLog(ctx, w, r, err)
 		return
@@ -134,7 +134,7 @@ func (res *Resource) Patch(ctx context.Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err = res.Storage.Patch(object)
+	err = res.Storage.Patch(ctx, object)
 	if err != nil {
 		res.sendAndLog(ctx, w, r, err)
 		return

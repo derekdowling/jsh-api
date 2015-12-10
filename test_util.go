@@ -4,6 +4,8 @@ import (
 	"log"
 	"strconv"
 
+	"golang.org/x/net/context"
+
 	"github.com/derekdowling/go-json-spec-handler"
 )
 
@@ -22,28 +24,28 @@ type MockStorage struct {
 }
 
 // Save assigns a URL of 1 to the object
-func (m *MockStorage) Save(object *jsh.Object) jsh.SendableError {
+func (m *MockStorage) Save(ctx context.Context, object *jsh.Object) jsh.SendableError {
 	object.ID = "1"
 	return nil
 }
 
 // Get returns a resource with ID as specified by the request
-func (m *MockStorage) Get(id string) (*jsh.Object, jsh.SendableError) {
+func (m *MockStorage) Get(ctx context.Context, id string) (*jsh.Object, jsh.SendableError) {
 	return m.SampleObject(id), nil
 }
 
 // List returns a sample list
-func (m *MockStorage) List() (jsh.List, jsh.SendableError) {
+func (m *MockStorage) List(ctx context.Context) (jsh.List, jsh.SendableError) {
 	return m.SampleList(m.ListCount), nil
 }
 
 // Patch does nothing
-func (m *MockStorage) Patch(object *jsh.Object) jsh.SendableError {
+func (m *MockStorage) Patch(ctx context.Context, object *jsh.Object) jsh.SendableError {
 	return nil
 }
 
 // Delete does nothing
-func (m *MockStorage) Delete(id string) jsh.SendableError {
+func (m *MockStorage) Delete(ctx context.Context, id string) jsh.SendableError {
 	return nil
 }
 

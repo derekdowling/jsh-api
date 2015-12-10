@@ -6,8 +6,13 @@ import (
 	"net/http"
 	"path"
 
+	"goji.io"
+
+	"goji.io/pat"
+
+	"golang.org/x/net/context"
+
 	"github.com/derekdowling/go-json-spec-handler"
-	"github.com/zenazn/goji/web"
 )
 
 // Resource is a handler for a specific API endpoint type ("users", "posts", etc)
@@ -22,8 +27,13 @@ import (
 //
 // You can also add your own custom routes as well using Goji's Mux API:
 //
+//	func hello(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+//		name := pat.Param(ctx, "name")
+//		fmt.Fprintf(w, "Hello, %s!", name)
+//	}
+//
 //	resource := jshapi.NewResource("api", "user", userStorage)
-//	resource.Get("/users/search/:name", httpNameSearchHandler)
+//	resource.Mux.HandleC(pat.New("/users/search/:name"), httpNameSearchHandler)
 //
 // Or add nested resources:
 //
@@ -31,7 +41,7 @@ import (
 //	resource.Handle("/posts/:id/*", commentStorage)
 //
 type Resource struct {
-	*web.Mux
+	*goji.Mux
 	// The singular name of the resource type("user", "post", etc)
 	Name string
 	// An implemented jshapi.Storage interface
@@ -46,80 +56,70 @@ type Resource struct {
 func NewResource(prefix string, name string, storage Storage) *Resource {
 
 	r := &Resource{
-		Mux:     web.New(),
+		Mux:     goji.NewMux(),
 		Name:    name,
 		Storage: storage,
 		Prefix:  prefix,
 	}
 
 	// setup resource sub-router
-	r.Mux.Post(r.Matcher(), r.Post)
-	r.Mux.Get(r.IDMatcher(), r.Get)
-	r.Mux.Get(r.Matcher(), r.List)
-	r.Mux.Delete(r.IDMatcher(), r.Delete)
-	r.Mux.Patch(r.IDMatcher(), r.Patch)
+	r.Mux.HandleFuncC(pat.Post(r.Matcher()), r.Post)
+	r.Mux.HandleFuncC(pat.Get(r.IDMatcher()), r.Get)
+	r.Mux.HandleFuncC(pat.Get(r.Matcher()), r.List)
+	r.Mux.HandleFuncC(pat.Delete(r.IDMatcher()), r.Delete)
+	r.Mux.HandleFuncC(pat.Patch(r.IDMatcher()), r.Patch)
 
 	return r
 }
 
 // Post => POST /resources
-func (res *Resource) Post(c web.C, w http.ResponseWriter, r *http.Request) {
+func (res *Resource) Post(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	object, err := jsh.ParseObject(r)
 	if err != nil {
-		res.sendAndLog(c, w, r, err)
+		res.sendAndLog(ctx, w, r, err)
 		return
 	}
 
 	err = res.Storage.Save(object)
 	if err != nil {
-		res.sendAndLog(c, w, r, err)
+		res.sendAndLog(ctx, w, r, err)
 		return
 	}
 
-	res.sendAndLog(c, w, r, object)
+	res.sendAndLog(ctx, w, r, object)
 }
 
 // Get => GET /resources/:id
-func (res *Resource) Get(c web.C, w http.ResponseWriter, r *http.Request) {
-	log.Printf("r.URL = %+v\n", r.URL)
-	id, exists := c.URLParams["id"]
-	if !exists {
-		res.sendAndLog(c, w, r, jsh.ISE(fmt.Sprintf("Unable to parse resource ID from path: %s", r.URL.Path)))
-		return
-	}
+func (res *Resource) Get(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	id := pat.Param(ctx, "id")
 
 	object, err := res.Storage.Get(id)
 	if err != nil {
-		res.sendAndLog(c, w, r, err)
+		res.sendAndLog(ctx, w, r, err)
 		return
 	}
 
-	res.sendAndLog(c, w, r, object)
+	res.sendAndLog(ctx, w, r, object)
 }
 
 // List => GET /resources
-func (res *Resource) List(c web.C, w http.ResponseWriter, r *http.Request) {
-	log.Printf("r.URL = %+v\n", r.URL)
+func (res *Resource) List(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	list, err := res.Storage.List()
 	if err != nil {
-		res.sendAndLog(c, w, r, err)
+		res.sendAndLog(ctx, w, r, err)
 		return
 	}
 
-	res.sendAndLog(c, w, r, list)
+	res.sendAndLog(ctx, w, r, list)
 }
 
 // Delete => DELETE /resources/:id
-func (res *Resource) Delete(c web.C, w http.ResponseWriter, r *http.Request) {
-	id, exists := c.URLParams["id"]
-	if !exists {
-		res.sendAndLog(c, w, r, jsh.ISE(fmt.Sprintf("Unable to parse resource ID from path: %s", r.URL.Path)))
-		return
-	}
+func (res *Resource) Delete(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	id := pat.Param(ctx, "id")
 
 	err := res.Storage.Delete(id)
 	if err != nil {
-		res.sendAndLog(c, w, r, err)
+		res.sendAndLog(ctx, w, r, err)
 		return
 	}
 
@@ -127,24 +127,23 @@ func (res *Resource) Delete(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 // Patch => PATCH /resources/:id
-func (res *Resource) Patch(c web.C, w http.ResponseWriter, r *http.Request) {
+func (res *Resource) Patch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	object, err := jsh.ParseObject(r)
 	if err != nil {
-		res.sendAndLog(c, w, r, err)
+		res.sendAndLog(ctx, w, r, err)
 		return
 	}
 
 	err = res.Storage.Patch(object)
 	if err != nil {
-		res.sendAndLog(c, w, r, err)
+		res.sendAndLog(ctx, w, r, err)
 		return
 	}
 
-	res.sendAndLog(c, w, r, object)
+	res.sendAndLog(ctx, w, r, object)
 }
 
-func (res *Resource) sendAndLog(c web.C, w http.ResponseWriter, r *http.Request, sendable jsh.Sendable) {
-
+func (res *Resource) sendAndLog(ctx context.Context, w http.ResponseWriter, r *http.Request, sendable jsh.Sendable) {
 	response, err := sendable.Prepare(r, true)
 	if err != nil && response.HTTPStatus == http.StatusInternalServerError {
 		res.Logger.Printf("Error: %s", err.Internal())

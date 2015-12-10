@@ -4,12 +4,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/zenazn/goji/web"
+	"goji.io"
+	"goji.io/pat"
 )
 
 // API is used to direct HTTP requests to resources
 type API struct {
-	*web.Mux
+	*goji.Mux
 	prefix    string
 	Resources map[string]*Resource
 	Logger    *log.Logger
@@ -18,7 +19,7 @@ type API struct {
 // New initializes a Handler object
 func New(prefix string) *API {
 	return &API{
-		Mux:       web.New(),
+		Mux:       goji.NewMux(),
 		prefix:    prefix,
 		Resources: map[string]*Resource{},
 		Logger:    log.New(os.Stdout, "jshapi: ", log.Ldate|log.Ltime|log.Lshortfile),
@@ -35,5 +36,5 @@ func (a *API) AddResource(resource *Resource) {
 	a.Resources[resource.Name] = resource
 
 	// Add subrouter to main API mux, use Matcher plus catch all
-	a.Mux.Handle(resource.Matcher()+"*", resource.Mux)
+	a.Mux.Handle(pat.New(resource.Matcher()+"*"), resource.Mux)
 }

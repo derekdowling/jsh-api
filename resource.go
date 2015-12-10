@@ -28,25 +28,27 @@ const (
 // given resource type. Will be accessible via `/[prefix/]<type>s` where the
 // proceeding `prefix/` is only precent if it is not empty.
 //
-// Using jshapi.NewCRUDResource you can generate a generic CRUD handler for a
+// Using NewCRUDResource you can generate a generic CRUD handler for a
 // JSON Specification Resource end point. If you wish to only implement a subset
-// of these endpoints that is also available through jshapi.NewResource() and manually
-// registering storage handlers via .Post(), .Get(), .List(), .Patch(), .Delete()
+// of these endpoints that is also available through NewResource() and manually
+// registering storage handlers via .Post(), .Get(), .List(), .Patch(), and .Delete():
 //
 // You can add your own routes using the goji.Mux API:
 //
-//	func hello(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+//	func searchHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 //		name := pat.Param(ctx, "name")
 //		fmt.Fprintf(w, "Hello, %s!", name)
 //	}
 //
-//	resource := jshapi.NewResource("api", "user", userStorage)
-//	resource.HandleC(pat.New("/users/search/:name"), httpNameSearchHandler)
+//	resource := jshapi.NewCRUDResource("user", userStorage)
+//	// creates /users/search/:name
+//	resource.HandleC(pat.New(resource.Matcher()+"/search/:name"), searchHandler)
 //
-// Or add nested resources:
+// Or add a nested resources:
 //
-//	commentResource := jshapi.NewResource("/posts/:id/", "comment", commentStorage)
-//	resource.Handle("/posts/:id/*", commentResource)
+//	commentResource := resource.NewSubResource("post")
+//	// creates /users/:id/posts* routes
+//	resource.CRUD(postStorage)
 type Resource struct {
 	*goji.Mux
 	// The singular name of the resource type("user", "post", etc)
@@ -247,16 +249,11 @@ func (res *Resource) Matcher() string {
 }
 
 // CreateSubResource automatically builds a resource with the proper
-// prefixes to ensure that it is accessible via:
-//
-//	/[prefix/]types/:id/subtype
-//
-// and then returns it. You can either manually add routes like normal,
-// or make use of:
-//
+// prefixes to ensure that it is accessible via /[prefix/]types/:id/subtypes
+// and then returns it so you can register route. You can either manually add
+// individual routes like normal, or make use of:
 //	subResource.CRUD(storage)
-//
-// with a compatible store.CRUD to automatically a full JSON SPEC CRUD Handler
+// to register the equivalent of what NewCRUDResource() gives you.
 func (res *Resource) CreateSubResource(resourceType string) *Resource {
 	subResource := NewResource(resourceType)
 	subResource.prefix = res.IDMatcher()

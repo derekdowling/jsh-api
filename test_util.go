@@ -9,7 +9,8 @@ import (
 
 const testType = "test"
 
-// MockStorage allows you to mock out APIs really easily
+// MockStorage allows you to mock out APIs really easily, and is also used internally
+// for testing the API layer.
 type MockStorage struct {
 	// ResourceType is the name of the resource you are mocking i.e. "user", "comment"
 	ResourceType string

@@ -22,12 +22,12 @@ func TestResource(t *testing.T) {
 		baseURL := server.URL
 
 		Convey("->Matcher()", func() {
-			resource.prefix = "api"
+			resource.Prefix = "api"
 			So(resource.Matcher(), ShouldEqual, "/api/tests")
 		})
 
 		Convey("->IDMatcher()", func() {
-			resource.prefix = "api"
+			resource.Prefix = "api"
 			So(resource.IDMatcher(), ShouldEqual, "/api/tests/:id")
 		})
 

@@ -29,10 +29,10 @@ func New(prefix string) *API {
 func (a *API) AddResource(resource *Resource) {
 
 	// add prefix and logger
-	resource.prefix = a.prefix
+	resource.Prefix = a.prefix
 	resource.Logger = a.Logger
 
-	a.Resources[resource.name] = resource
+	a.Resources[resource.Name] = resource
 
 	// Add subrouter to main API mux, use Matcher plus catch all
 	a.Mux.Handle(resource.Matcher()+"*", resource.Mux)

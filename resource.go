@@ -10,17 +10,36 @@ import (
 	"github.com/zenazn/goji/web"
 )
 
-// Resource is a handler object for dealing with CRUD API endpoints
+// Resource is a handler for a specific API endpoint type ("users", "posts", etc)
+// which wraps Goji's(https://goji.io/) Mux and automatically populates a basic
+// set of routes that represent a CRUD API:
+//
+// GET    /resource
+// POST   /resource
+// GET    /resource/:id
+// DELETE /resource/:id
+// PATCH  /resource/:id
+//
+// You can also add your own custom routes as well using Goji's Mux API:
+//
+//	resource := jshapi.NewResource("api", "user", userStorage)
+//	resource.Get("/users/search/:name", httpNameSearchHandler)
+//
+// Or add nested resources:
+//
+//	commentResource := jshapi.NewResource("/posts/:id/", "comment", commentStorage)
+//	resource.Handle("/posts/:id/*", commentStorage)
+//
 type Resource struct {
 	*web.Mux
-	// The singular name of the resource type ex) "user" or "post"
-	name string
+	// The singular name of the resource type("user", "post", etc)
+	Name string
 	// An implemented jshapi.Storage interface
-	storage Storage
+	Storage Storage
 	// An implementation of Go's standard logger
 	Logger *log.Logger
 	// Prefix is set if the resource is not the top level of URI, "/prefix/resources
-	prefix string
+	Prefix string
 }
 
 // NewResource is a resource constructor
@@ -28,9 +47,9 @@ func NewResource(prefix string, name string, storage Storage) *Resource {
 
 	r := &Resource{
 		Mux:     web.New(),
-		name:    name,
-		storage: storage,
-		prefix:  prefix,
+		Name:    name,
+		Storage: storage,
+		Prefix:  prefix,
 	}
 
 	// setup resource sub-router
@@ -51,7 +70,7 @@ func (res *Resource) Post(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = res.storage.Save(object)
+	err = res.Storage.Save(object)
 	if err != nil {
 		res.sendAndLog(c, w, r, err)
 		return
@@ -69,7 +88,7 @@ func (res *Resource) Get(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	object, err := res.storage.Get(id)
+	object, err := res.Storage.Get(id)
 	if err != nil {
 		res.sendAndLog(c, w, r, err)
 		return
@@ -81,7 +100,7 @@ func (res *Resource) Get(c web.C, w http.ResponseWriter, r *http.Request) {
 // List => GET /resources
 func (res *Resource) List(c web.C, w http.ResponseWriter, r *http.Request) {
 	log.Printf("r.URL = %+v\n", r.URL)
-	list, err := res.storage.List()
+	list, err := res.Storage.List()
 	if err != nil {
 		res.sendAndLog(c, w, r, err)
 		return
@@ -98,7 +117,7 @@ func (res *Resource) Delete(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := res.storage.Delete(id)
+	err := res.Storage.Delete(id)
 	if err != nil {
 		res.sendAndLog(c, w, r, err)
 		return
@@ -115,7 +134,7 @@ func (res *Resource) Patch(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = res.storage.Patch(object)
+	err = res.Storage.Patch(object)
 	if err != nil {
 		res.sendAndLog(c, w, r, err)
 		return
@@ -139,7 +158,7 @@ func (res *Resource) sendAndLog(c web.C, w http.ResponseWriter, r *http.Request,
 
 // PluralType returns the resource's name, but pluralized
 func (res *Resource) PluralType() string {
-	return res.name + "s"
+	return res.Name + "s"
 }
 
 // IDMatcher returns a uri path matcher for the resource type
@@ -149,5 +168,5 @@ func (res *Resource) IDMatcher() string {
 
 // Matcher returns the top level uri path matcher for the resource type
 func (res *Resource) Matcher() string {
-	return fmt.Sprintf("/%s", path.Join(res.prefix, res.PluralType()))
+	return fmt.Sprintf("/%s", path.Join(res.Prefix, res.PluralType()))
 }

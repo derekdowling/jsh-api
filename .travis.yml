@@ -1,5 +1,6 @@
 language: go
 go:
+  - 1.5
   - tip
 
 install:
@@ -7,4 +8,4 @@ install:
   - go get github.com/smartystreets/goconvey
 
 script:
-  - godep go test $(go list ./... | grep -v /vendor/)
+  - GO15VENDOREXPERIMENT=1 godep go test $(go list ./... | grep -v /vendor/)

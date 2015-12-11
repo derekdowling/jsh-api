@@ -5,6 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"golang.org/x/net/context"
+
+	"github.com/derekdowling/go-json-spec-handler"
 	"github.com/derekdowling/go-json-spec-handler/client"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -18,9 +21,11 @@ func TestResource(t *testing.T) {
 		}
 
 		resourceType := "foo"
-		resource := NewMockResource("", resourceType, 2, attrs)
+		resource := NewMockResource("api", resourceType, 2, attrs)
 		server := httptest.NewServer(resource)
 		baseURL := server.URL
+
+		So(len(resource.Routes), ShouldEqual, 5)
 
 		Convey("->Matcher()", func() {
 			resource.prefix = "/api"
@@ -86,9 +91,33 @@ func TestResource(t *testing.T) {
 	})
 }
 
-func TestSubResource(t *testing.T) {
+func TestCustomAction(t *testing.T) {
 
-	Convey("Sub-Resource Tests", t, func() {
+	Convey("Resource Action Tests", t, func() {
+
+		attrs := map[string]string{
+			"foo": "bar",
+		}
+		resourceType := "bar"
+		resource := NewMockResource("/foo", resourceType, 2, attrs)
+
+		Convey("->NewAction()", func() {
+			resource.NewAction("mutate", func(ctx context.Context, object *jsh.Object) jsh.SendableError {
+				target := map[string]string{}
+				object.Unmarshal("bar", target)
+				target["mutated"] = "true"
+				return nil
+			})
+
+			So(len(resource.Routes), ShouldEqual, 6)
+			So(resource.Routes[len(resource.Routes)-1], ShouldEqual, "PATCH - /foo/bars/:id/mutate")
+		})
+	})
+}
+
+func TestNestedResource(t *testing.T) {
+
+	Convey("Nested Resource Tests", t, func() {
 
 		attrs := map[string]string{
 			"foo": "bar",
@@ -104,13 +133,21 @@ func TestSubResource(t *testing.T) {
 			ListCount:          2,
 		}
 
-		subResource := resource.CreateSubResource(subResourceType)
+		subResource := resource.NewNestedResource(subResourceType)
 		subResource.CRUD(subStorageMock)
 
 		// server := httptest.NewServer(resource)
 		// baseURL := server.URL + subResource.prefix
 
-		Convey("subResource prefix", func() {
+		Convey("Resource", func() {
+
+			Convey("should track sub-resources properly", func() {
+				So(len(resource.Subresources), ShouldEqual, 1)
+				So(resource.Subresources[subResourceType], ShouldEqual, subResource)
+			})
+		})
+
+		Convey("Sub-Resource prefix", func() {
 			So(subResource.prefix, ShouldEqual, "/foo/bars/:id")
 		})
 
@@ -124,7 +161,6 @@ func TestSubResource(t *testing.T) {
 
 		Convey("->List()", func() {
 			// resp, err := jsc.Get(baseURL, subResourceType, "")
-			// log.Printf("resp.Response.Request = %+v\n", resp.Response.Request)
 			// So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			// So(err, ShouldBeNil)
 
@@ -133,8 +169,6 @@ func TestSubResource(t *testing.T) {
 
 			// So(len(list), ShouldEqual, 2)
 			// So(list[0].ID, ShouldEqual, "1")
-
-			// So(1, ShouldBeFalse)
 		})
 
 	})

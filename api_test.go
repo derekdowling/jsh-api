@@ -10,7 +10,7 @@ func TestAPI(t *testing.T) {
 
 	Convey("API Tests", t, func() {
 
-		api := New("foo")
+		api := New("foo", nil)
 
 		Convey("->AddResource()", func() {
 			resource := NewMockResource("", "test", 1, nil)

@@ -1,0 +1,10 @@
+language: go
+go:
+  - tip
+
+install:
+  - go get github.com/tools/godep
+  - go get github.com/smartystreets/goconvey
+
+script:
+  - godep go test $(go list ./... | grep -v /vendor/)

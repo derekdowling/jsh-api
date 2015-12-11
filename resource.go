@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"strings"
 
 	"goji.io/pat"
 
@@ -55,7 +56,10 @@ type Resource struct {
 	Type string
 	// An implementation of Go's standard logger
 	Logger *log.Logger
+	// Map of resource type to subresources
+	Subresources map[string]*Resource
 	// Prefix is set if the resource is not the top level of URI, "/prefix/resources
+	Routes []string
 	prefix string
 }
 
@@ -64,8 +68,11 @@ type Resource struct {
 // managing routes and handling API calls.
 func NewResource(resourceType string) *Resource {
 	return &Resource{
-		Mux:  goji.NewMux(),
-		Type: resourceType,
+		Mux:          goji.NewMux(),
+		Type:         resourceType,
+		Subresources: map[string]*Resource{},
+		Routes:       []string{},
+		prefix:       "/",
 	}
 }
 
@@ -86,12 +93,11 @@ func NewCRUDResource(resourceType string, storage store.CRUD) *Resource {
 //	DELETE /[prefix/]types/:id
 //	PATCH  /[prefix/]types/:id
 func (res *Resource) CRUD(storage store.CRUD) {
-	// add all JSON API CRUD routes
-	res.Get(storage)
-	res.Patch(storage)
-	res.Post(storage)
-	res.List(storage)
-	res.Delete(storage)
+	res.Get(storage.Get)
+	res.Patch(storage.Update)
+	res.Post(storage.Save)
+	res.List(storage.List)
+	res.Delete(storage.Delete)
 }
 
 // Post registers a `POST /resources` handler with the resource
@@ -102,6 +108,8 @@ func (res *Resource) Post(storage store.Save) {
 			res.postHandler(ctx, w, r, storage)
 		},
 	)
+
+	res.addRoute(post, res.Matcher())
 }
 
 // Get registers a `GET /resources/:id` handler for the resource
@@ -112,6 +120,8 @@ func (res *Resource) Get(storage store.Get) {
 			res.getHandler(ctx, w, r, storage)
 		},
 	)
+
+	res.addRoute(get, res.IDMatcher())
 }
 
 // List registers a `GET /resources` handler for the resource
@@ -122,6 +132,8 @@ func (res *Resource) List(storage store.List) {
 			res.listHandler(ctx, w, r, storage)
 		},
 	)
+
+	res.addRoute(get, res.Matcher())
 }
 
 // Delete registers a `DELETE /resources/:id` handler for the resource
@@ -132,6 +144,8 @@ func (res *Resource) Delete(storage store.Delete) {
 			res.deleteHandler(ctx, w, r, storage)
 		},
 	)
+
+	res.addRoute(delete, res.IDMatcher())
 }
 
 // Patch registers a `PATCH /resources/:id` handler for the resource
@@ -142,6 +156,8 @@ func (res *Resource) Patch(storage store.Update) {
 			res.patchHandler(ctx, w, r, storage)
 		},
 	)
+
+	res.addRoute(patch, res.IDMatcher())
 }
 
 // POST /resources
@@ -152,7 +168,7 @@ func (res *Resource) postHandler(ctx context.Context, w http.ResponseWriter, r *
 		return
 	}
 
-	err = storage.Save(ctx, object)
+	err = storage(ctx, object)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
@@ -165,7 +181,7 @@ func (res *Resource) postHandler(ctx context.Context, w http.ResponseWriter, r *
 func (res *Resource) getHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Get) {
 	id := pat.Param(ctx, "id")
 
-	object, err := storage.Get(ctx, id)
+	object, err := storage(ctx, id)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
@@ -176,7 +192,7 @@ func (res *Resource) getHandler(ctx context.Context, w http.ResponseWriter, r *h
 
 // GET /resources
 func (res *Resource) listHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.List) {
-	list, err := storage.List(ctx)
+	list, err := storage(ctx)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
@@ -189,7 +205,7 @@ func (res *Resource) listHandler(ctx context.Context, w http.ResponseWriter, r *
 func (res *Resource) deleteHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Delete) {
 	id := pat.Param(ctx, "id")
 
-	err := storage.Delete(ctx, id)
+	err := storage(ctx, id)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
@@ -206,13 +222,29 @@ func (res *Resource) patchHandler(ctx context.Context, w http.ResponseWriter, r 
 		return
 	}
 
-	err = storage.Update(ctx, object)
+	err = storage(ctx, object)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
 	}
 
 	res.SendAndLog(ctx, w, r, object)
+}
+
+// NewAction allows you to add custom actions to your resource types, it uses the
+// PATCH /(prefix/)resourceTypes/:id/<actionName> path format and expects a store.Update
+// storage interface.
+func (res *Resource) NewAction(actionName string, storage store.Update) {
+	matcher := path.Join(res.IDMatcher(), actionName)
+
+	res.HandleFuncC(
+		pat.Get(matcher),
+		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			res.patchHandler(ctx, w, r, storage)
+		},
+	)
+
+	res.addRoute(patch, matcher)
 }
 
 // SendAndLog is a jsh wrapper function that handles logging 500 errors and
@@ -241,23 +273,43 @@ func (res *Resource) IDMatcher() string {
 
 // Matcher returns the top level uri path matcher for the resource type
 func (res *Resource) Matcher() string {
-	if res.prefix == "" {
-		return fmt.Sprintf("/%s", res.PluralType())
-	}
-
-	return fmt.Sprintf("%s", path.Join(res.prefix, res.PluralType()))
+	return path.Join(res.prefix, res.PluralType())
 }
 
-// CreateSubResource automatically builds a resource with the proper
+func (res *Resource) addRoute(method string, route string) {
+	res.Routes = append(res.Routes, fmt.Sprintf("%s - %s", method, route))
+}
+
+// NewNestedResource automatically builds a resource with the proper
 // prefixes to ensure that it is accessible via /[prefix/]types/:id/subtypes
 // and then returns it so you can register route. You can either manually add
 // individual routes like normal, or make use of:
 //	subResource.CRUD(storage)
 // to register the equivalent of what NewCRUDResource() gives you.
-func (res *Resource) CreateSubResource(resourceType string) *Resource {
+func (res *Resource) NewNestedResource(resourceType string) *Resource {
 	subResource := NewResource(resourceType)
 	subResource.prefix = res.IDMatcher()
 
-	res.HandleC(pat.New(subResource.Matcher()+"*"), subResource)
+	res.Subresources[resourceType] = subResource
+
+	nestedMatcher := pat.New(fmt.Sprintf("%s/%s*", res.IDMatcher(), subResource.PluralType()))
+	log.Printf("nestedMatcher.String() = %+v\n", nestedMatcher.String())
+	res.HandleC(nestedMatcher, subResource)
+
 	return subResource
+}
+
+// RouteTree prints a recursive route tree based on what the resource, and
+// all subresources have registered
+func (res *Resource) RouteTree() string {
+	var routes string
+	for _, route := range res.Routes {
+		routes = strings.Join([]string{routes, route}, "\n")
+	}
+
+	for _, resource := range res.Subresources {
+		routes = strings.Join([]string{routes, resource.RouteTree()}, "\n")
+	}
+
+	return routes
 }

@@ -18,18 +18,23 @@ type API struct {
 	Logger    *log.Logger
 }
 
-// New initializes a Handler object
-func New(prefix string) *API {
+// New initializes a new top level API Resource Handler.
+func New(prefix string, logger *log.Logger) *API {
 
-	if len(prefix) > 0 && !strings.HasPrefix(prefix, "/") {
+	// ensure that our top level prefix is "/" prefixed
+	if !strings.HasPrefix(prefix, "/") {
 		prefix = fmt.Sprintf("/%s", prefix)
+	}
+
+	if logger == nil {
+		logger = log.New(os.Stdout, "jshapi: ", log.Ldate|log.Ltime|log.Lshortfile)
 	}
 
 	return &API{
 		Mux:       goji.NewMux(),
 		prefix:    prefix,
 		Resources: map[string]*Resource{},
-		Logger:    log.New(os.Stdout, "jshapi: ", log.Ldate|log.Ltime|log.Lshortfile),
+		Logger:    logger,
 	}
 }
 
@@ -44,4 +49,17 @@ func (a *API) AddResource(resource *Resource) {
 
 	// Add subrouter to main API mux, use Matcher plus catch all
 	a.Mux.HandleC(pat.New(resource.Matcher()+"*"), resource)
+}
+
+// RouteTree prints out all accepted routes for the API that use jshapi implemented
+// ways of adding routes through resources: NewCRUDResource(), .Get(), .Post, .Delete(),
+// .Patch(), .List(), and .NewAction()
+func (a *API) RouteTree() string {
+	var routes string
+
+	for _, resource := range a.Resources {
+		routes = strings.Join([]string{routes, resource.RouteTree()}, "")
+	}
+
+	return routes
 }

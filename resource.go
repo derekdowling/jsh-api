@@ -26,7 +26,7 @@ const (
 )
 
 // Resource holds the necessary state for creating a REST API endpoint for a
-// given resource type. Will be accessible via `/[prefix/]<type>s` where the
+// given resource type. Will be accessible via `/(prefix/)types` where the
 // proceeding `prefix/` is only precent if it is not empty.
 //
 // Using NewCRUDResource you can generate a generic CRUD handler for a
@@ -56,11 +56,11 @@ type Resource struct {
 	Type string
 	// An implementation of Go's standard logger
 	Logger *log.Logger
-	// Map of resource type to subresources
-	Subresources map[string]*Resource
 	// Prefix is set if the resource is not the top level of URI, "/prefix/resources
 	Routes []string
-	prefix string
+	// Map of relationships
+	Relationships map[string]Relationship
+	prefix        string
 }
 
 // NewResource is a resource constructor that makes no assumptions about routes
@@ -68,11 +68,11 @@ type Resource struct {
 // managing routes and handling API calls.
 func NewResource(resourceType string) *Resource {
 	return &Resource{
-		Mux:          goji.NewMux(),
-		Type:         resourceType,
-		Subresources: map[string]*Resource{},
-		Routes:       []string{},
-		prefix:       "/",
+		Mux:           goji.NewMux(),
+		Type:          resourceType,
+		Relationships: map[string]Relationship{},
+		Routes:        []string{},
+		prefix:        "/",
 	}
 }
 
@@ -160,15 +160,94 @@ func (res *Resource) Patch(storage store.Update) {
 	res.addRoute(patch, res.IDMatcher())
 }
 
+// ToOne handles the /resources/:id/(relationships/)<resourceType> route which
+// represents a One-To-One relationship between the resource and the
+// specified resourceType
+func (res *Resource) ToOne(
+	resourceType string,
+	storage store.Get,
+) {
+	resourceType = strings.TrimSuffix(resourceType, "s")
+
+	res.relationshipHandler(
+		resourceType,
+		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			res.getHandler(ctx, w, r, storage)
+		},
+	)
+
+	res.Relationships[resourceType] = ToOne
+}
+
+// ToMany handles the /resources/:id/(relationships/)<resourceType>s route which
+// represents a One-To-Many relationship between the resource and the
+// specified resourceType
+func (res *Resource) ToMany(
+	resourceType string,
+	storage store.ToMany,
+) {
+	if !strings.HasSuffix(resourceType, "s") {
+		resourceType = fmt.Sprintf("%ss", resourceType)
+	}
+
+	res.relationshipHandler(
+		resourceType,
+		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			res.toManyHandler(ctx, w, r, storage)
+		},
+	)
+
+	res.Relationships[resourceType] = ToMany
+}
+
+// relationshipHandler does the dirty work of setting up both routes for a single
+// relationship
+func (res *Resource) relationshipHandler(
+	resourceType string,
+	handler goji.HandlerFunc,
+) {
+
+	// handle /.../:id/<resourceType>
+	matcher := fmt.Sprintf("%s/%s", res.IDMatcher(), resourceType)
+	res.HandleFuncC(
+		pat.Get(matcher),
+		handler,
+	)
+	res.addRoute(get, matcher)
+
+	// handle /.../:id/relationships/<resourceType>
+	relationshipMatcher := fmt.Sprintf("%s/relationships/%s", res.IDMatcher(), resourceType)
+	res.HandleFuncC(
+		pat.Get(relationshipMatcher),
+		handler,
+	)
+	res.addRoute(get, relationshipMatcher)
+}
+
+// Mutate allows you to add custom actions to your resource types, it uses the
+// GET /(prefix/)resourceTypes/:id/<actionName> path format
+func (res *Resource) Mutate(actionName string, storage store.Get) {
+	matcher := path.Join(res.IDMatcher(), actionName)
+
+	res.HandleFuncC(
+		pat.Get(matcher),
+		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			res.mutateHandler(ctx, w, r, storage)
+		},
+	)
+
+	res.addRoute(patch, matcher)
+}
+
 // POST /resources
 func (res *Resource) postHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Save) {
-	object, err := jsh.ParseObject(r)
+	parsedObject, err := jsh.ParseObject(r)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
 	}
 
-	err = storage(ctx, object)
+	object, err := storage(ctx, parsedObject)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
@@ -216,13 +295,13 @@ func (res *Resource) deleteHandler(ctx context.Context, w http.ResponseWriter, r
 
 // PATCH /resources/:id
 func (res *Resource) patchHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Update) {
-	object, err := jsh.ParseObject(r)
+	parsedObject, err := jsh.ParseObject(r)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
 	}
 
-	err = storage(ctx, object)
+	object, err := storage(ctx, parsedObject)
 	if err != nil {
 		res.SendAndLog(ctx, w, r, err)
 		return
@@ -231,20 +310,30 @@ func (res *Resource) patchHandler(ctx context.Context, w http.ResponseWriter, r 
 	res.SendAndLog(ctx, w, r, object)
 }
 
-// NewAction allows you to add custom actions to your resource types, it uses the
-// PATCH /(prefix/)resourceTypes/:id/<actionName> path format and expects a store.Update
-// storage interface.
-func (res *Resource) NewAction(actionName string, storage store.Update) {
-	matcher := path.Join(res.IDMatcher(), actionName)
+// GET /resources/:id/(relationships/)<resourceType>s
+func (res *Resource) toManyHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.ToMany) {
+	id := pat.Param(ctx, "id")
 
-	res.HandleFuncC(
-		pat.Get(matcher),
-		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			res.patchHandler(ctx, w, r, storage)
-		},
-	)
+	list, err := storage(ctx, id)
+	if err != nil {
+		res.SendAndLog(ctx, w, r, err)
+		return
+	}
 
-	res.addRoute(patch, matcher)
+	res.SendAndLog(ctx, w, r, list)
+}
+
+// All HTTP Methods for /resources/:id/<mutate>
+func (res *Resource) mutateHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Get) {
+	id := pat.Param(ctx, "id")
+
+	response, err := storage(ctx, id)
+	if err != nil {
+		res.SendAndLog(ctx, w, r, err)
+		return
+	}
+
+	res.SendAndLog(ctx, w, r, response)
 }
 
 // SendAndLog is a jsh wrapper function that handles logging 500 errors and
@@ -280,35 +369,13 @@ func (res *Resource) addRoute(method string, route string) {
 	res.Routes = append(res.Routes, fmt.Sprintf("%s - %s", method, route))
 }
 
-// NewNestedResource automatically builds a resource with the proper
-// prefixes to ensure that it is accessible via /[prefix/]types/:id/subtypes
-// and then returns it so you can register route. You can either manually add
-// individual routes like normal, or make use of:
-//	subResource.CRUD(storage)
-// to register the equivalent of what NewCRUDResource() gives you.
-func (res *Resource) NewNestedResource(resourceType string) *Resource {
-	subResource := NewResource(resourceType)
-	subResource.prefix = res.IDMatcher()
-
-	res.Subresources[resourceType] = subResource
-
-	nestedMatcher := pat.New(fmt.Sprintf("%s/%s*", res.IDMatcher(), subResource.PluralType()))
-	log.Printf("nestedMatcher.String() = %+v\n", nestedMatcher.String())
-	res.HandleC(nestedMatcher, subResource)
-
-	return subResource
-}
-
 // RouteTree prints a recursive route tree based on what the resource, and
 // all subresources have registered
 func (res *Resource) RouteTree() string {
 	var routes string
+
 	for _, route := range res.Routes {
 		routes = strings.Join([]string{routes, route}, "\n")
-	}
-
-	for _, resource := range res.Subresources {
-		routes = strings.Join([]string{routes, resource.RouteTree()}, "\n")
 	}
 
 	return routes

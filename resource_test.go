@@ -39,47 +39,37 @@ func TestResource(t *testing.T) {
 
 		Convey("->Post()", func() {
 			object := sampleObject("", resourceType, attrs)
-			resp, err := jsc.Post(baseURL, object)
+			object, resp, err := jsc.Post(baseURL, object)
+
+			So(err, ShouldBeNil)
 			So(resp.StatusCode, ShouldEqual, http.StatusCreated)
-			So(err, ShouldBeNil)
-
-			obj, err := resp.GetObject()
-			So(err, ShouldBeNil)
-
-			So(obj.ID, ShouldEqual, "1")
+			So(object.ID, ShouldEqual, "1")
 		})
 
 		Convey("->List()", func() {
-			resp, err := jsc.Get(baseURL, resourceType, "")
+			list, resp, err := jsc.GetList(baseURL, resourceType)
+			So(err, ShouldBeNil)
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			So(err, ShouldBeNil)
-
-			list, err := resp.GetList()
-			So(err, ShouldBeNil)
 
 			So(len(list), ShouldEqual, 2)
 			So(list[0].ID, ShouldEqual, "1")
 		})
 
 		Convey("->Get()", func() {
-			resp, err := jsc.Get(baseURL, resourceType, "3")
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			So(err, ShouldBeNil)
+			object, resp, err := jsc.GetObject(baseURL, resourceType, "3")
 
-			obj, err := resp.GetObject()
 			So(err, ShouldBeNil)
-			So(obj.ID, ShouldEqual, "3")
+			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			So(object.ID, ShouldEqual, "3")
 		})
 
 		Convey("->Patch()", func() {
 			object := sampleObject("1", resourceType, attrs)
-			resp, err := jsc.Patch(baseURL, object)
+			object, resp, err := jsc.Patch(baseURL, object)
+
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			So(err, ShouldBeNil)
-
-			obj, err := resp.GetObject()
-			So(err, ShouldBeNil)
-			So(obj.ID, ShouldEqual, "1")
+			So(object.ID, ShouldEqual, "1")
 		})
 
 		Convey("->Delete()", func() {
@@ -87,37 +77,48 @@ func TestResource(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 		})
-
 	})
 }
 
-func TestCustomAction(t *testing.T) {
+func TestMutateHandler(t *testing.T) {
 
-	Convey("Resource Action Tests", t, func() {
+	Convey("Custom Handler Tests", t, func() {
 
 		attrs := map[string]string{
 			"foo": "bar",
 		}
+
 		resourceType := "bar"
 		resource := NewMockResource("/foo", resourceType, 2, attrs)
 
-		Convey("->NewAction()", func() {
-			resource.NewAction("mutate", func(ctx context.Context, object *jsh.Object) jsh.SendableError {
-				target := map[string]string{}
-				object.Unmarshal("bar", target)
-				target["mutated"] = "true"
-				return nil
-			})
+		handler := func(ctx context.Context, id string) (*jsh.Object, *jsh.Error) {
+			object := sampleObject(id, resourceType, attrs)
+			return object, nil
+		}
 
+		resource.Mutate("mutate", handler)
+
+		server := httptest.NewServer(resource)
+		baseURL := server.URL + resource.IDMatcher()
+
+		Convey("Resource State", func() {
 			So(len(resource.Routes), ShouldEqual, 6)
 			So(resource.Routes[len(resource.Routes)-1], ShouldEqual, "PATCH - /foo/bars/:id/mutate")
 		})
+
+		Convey("->Custom()", func() {
+			response, err := jsc.Get(baseURL + "/mutate")
+			So(err, ShouldBeNil)
+
+			_, err = jsc.ParseObject(response)
+			So(err, ShouldBeNil)
+		})
 	})
 }
 
-func TestNestedResource(t *testing.T) {
+func TestToOne(t *testing.T) {
 
-	Convey("Nested Resource Tests", t, func() {
+	Convey("Relationship ToOne Tests", t, func() {
 
 		attrs := map[string]string{
 			"foo": "bar",
@@ -126,49 +127,104 @@ func TestNestedResource(t *testing.T) {
 		resourceType := "bar"
 		resource := NewMockResource("/foo", resourceType, 2, attrs)
 
-		subResourceType := "baz"
-		subStorageMock := &MockStorage{
-			ResourceType:       subResourceType,
-			ResourceAttributes: attrs,
-			ListCount:          2,
+		relationshipHandler := func(ctx context.Context, resourceID string) (*jsh.Object, *jsh.Error) {
+			return sampleObject("1", "baz", map[string]string{"baz": "ball"}), nil
 		}
 
-		subResource := resource.NewNestedResource(subResourceType)
-		subResource.CRUD(subStorageMock)
+		subResourceType := "baz"
+		resource.ToOne(subResourceType, relationshipHandler)
 
-		// server := httptest.NewServer(resource)
-		// baseURL := server.URL + subResource.prefix
+		server := httptest.NewServer(resource)
+		baseURL := server.URL + resource.IDMatcher()
 
-		Convey("Resource", func() {
+		Convey("Resource State", func() {
 
 			Convey("should track sub-resources properly", func() {
-				So(len(resource.Subresources), ShouldEqual, 1)
-				So(resource.Subresources[subResourceType], ShouldEqual, subResource)
+				So(len(resource.Relationships), ShouldEqual, 1)
+				So(len(resource.Routes), ShouldEqual, 7)
 			})
 		})
 
-		Convey("Sub-Resource prefix", func() {
-			So(subResource.prefix, ShouldEqual, "/foo/bars/:id")
+		Convey("->ToOne()", func() {
+
+			Convey("/foo/bars/:id/baz", func() {
+				resp, err := jsc.Get(baseURL + "/" + subResourceType)
+				So(err, ShouldBeNil)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+
+				object, err := jsc.ParseObject(resp)
+				So(err, ShouldBeNil)
+				So(object.ID, ShouldEqual, "1")
+			})
+
+			Convey("/foo/bars/:id/relationships/baz", func() {
+				resp, err := jsc.Get(baseURL + "/relationships/" + subResourceType)
+				So(err, ShouldBeNil)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+
+				obj, err := jsc.ParseObject(resp)
+				So(err, ShouldBeNil)
+				So(obj.ID, ShouldEqual, "1")
+			})
+		})
+	})
+}
+
+func TestToMany(t *testing.T) {
+
+	Convey("Relationship ToMany Tests", t, func() {
+
+		attrs := map[string]string{
+			"foo": "bar",
+		}
+
+		resourceType := "bar"
+		resource := NewMockResource("/foo", resourceType, 2, attrs)
+
+		relationshipHandler := func(ctx context.Context, resourceID string) (jsh.List, *jsh.Error) {
+			return jsh.List{
+				sampleObject("1", "baz", map[string]string{"baz": "ball"}),
+				sampleObject("2", "baz", map[string]string{"baz": "ball2"}),
+			}, nil
+		}
+
+		subResourceType := "baz"
+		resource.ToMany(subResourceType, relationshipHandler)
+
+		server := httptest.NewServer(resource)
+		baseURL := server.URL + resource.IDMatcher()
+
+		Convey("Resource State", func() {
+
+			Convey("should track sub-resources properly", func() {
+				So(len(resource.Relationships), ShouldEqual, 1)
+				So(len(resource.Routes), ShouldEqual, 7)
+			})
 		})
 
-		Convey("->Matcher()", func() {
-			So(subResource.Matcher(), ShouldEqual, "/foo/bars/:id/bazs")
-		})
+		Convey("->ToOne()", func() {
 
-		Convey("->IDMatcher()", func() {
-			So(subResource.IDMatcher(), ShouldEqual, "/foo/bars/:id/bazs/:id")
-		})
+			Convey("/foo/bars/:id/bazs", func() {
+				resp, err := jsc.Get(baseURL + "/" + subResourceType + "s")
+				So(err, ShouldBeNil)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
 
-		Convey("->List()", func() {
-			// resp, err := jsc.Get(baseURL, subResourceType, "")
-			// So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			// So(err, ShouldBeNil)
+				list, err := jsc.ParseList(resp)
+				So(err, ShouldBeNil)
+				So(len(list), ShouldEqual, 2)
+				So(list[0].ID, ShouldEqual, "1")
+			})
 
-			// list, err := resp.GetList()
-			// So(err, ShouldBeNil)
+			Convey("/foo/bars/:id/relationships/bazs", func() {
+				resp, err := jsc.Get(baseURL + "/relationships/" + subResourceType + "s")
+				So(err, ShouldBeNil)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
 
-			// So(len(list), ShouldEqual, 2)
-			// So(list[0].ID, ShouldEqual, "1")
+				list, err := jsc.ParseList(resp)
+				So(err, ShouldBeNil)
+				So(len(list), ShouldEqual, 2)
+				So(list[0].ID, ShouldEqual, "1")
+			})
 		})
 
 	})

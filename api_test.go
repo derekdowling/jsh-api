@@ -14,7 +14,7 @@ func TestAPI(t *testing.T) {
 
 		Convey("->AddResource()", func() {
 			resource := NewMockResource("", "test", 1, nil)
-			api.AddResource(resource)
+			api.Add(resource)
 
 			So(resource.prefix, ShouldEqual, "/foo")
 			So(api.Resources["test"], ShouldEqual, resource)

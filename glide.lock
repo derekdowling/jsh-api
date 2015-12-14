@@ -1,5 +1,5 @@
 hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-updated: 2015-12-14T14:27:08.4996052-08:00
+updated: 2015-12-14T14:35:05.845085279-08:00
 imports:
 - name: fmt
   version: ""
@@ -11,6 +11,7 @@ imports:
   version: ""
 - name: github.com/goji/param
   version: da86c81e3e3c23b1948bc7a003d381250a032aa7
+  repo: https://github.com/goji/param
 - name: github.com/jtolds/gls
   version: 9a4a02dbe491bef4bab3c24fd9f3087d6c4c6690
 - name: github.com/smartystreets/assertions
@@ -35,6 +36,7 @@ imports:
   - context
 - name: golang.org/x/text
   version: 92ca7bbb695e2e9675f1d731fa85760f95d2c0df
+  repo: https://golang.org/x/text
 - name: log
   version: ""
 - name: net/http

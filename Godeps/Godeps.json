@@ -2,15 +2,9 @@
 	"ImportPath": "github.com/derekdowling/jsh-api",
 	"GoVersion": "go1.5.1",
 	"Packages": [
-		"github.com/derekdowling/jsh-api",
-		"github.com/derekdowling/jsh-api/store"
+		"./..."
 	],
 	"Deps": [
-		{
-			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.8.7-53-g446d1c1",
-			"Rev": "446d1c146faa8ed3f4218f056fcd165f6bcfda81"
-		},
 		{
 			"ImportPath": "github.com/asaskevich/govalidator",
 			"Comment": "v2-37-gedd46cd",

@@ -18,11 +18,13 @@ import (
 )
 
 const (
-	post   = "POST"
-	get    = "GET"
-	list   = "LIST"
-	delete = "DELETE"
-	patch  = "PATCH"
+	post    = "POST"
+	get     = "GET"
+	list    = "LIST"
+	delete  = "DELETE"
+	patch   = "PATCH"
+	patID   = "/:id"
+	patRoot = ""
 )
 
 // Resource holds the necessary state for creating a REST API endpoint for a
@@ -34,7 +36,8 @@ const (
 // of these endpoints that is also available through NewResource() and manually
 // registering storage handlers via .Post(), .Get(), .List(), .Patch(), and .Delete():
 //
-// You can add your own routes using the goji.Mux API:
+// Besides the built in registration helpers, it isn't recommended, but you can add
+// your own routes using the goji.Mux API:
 //
 //	func searchHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 //		name := pat.Param(ctx, "name")
@@ -43,13 +46,7 @@ const (
 //
 //	resource := jshapi.NewCRUDResource("user", userStorage)
 //	// creates /users/search/:name
-//	resource.HandleC(pat.New(resource.Matcher()+"/search/:name"), searchHandler)
-//
-// Or add a nested resources:
-//
-//	commentResource := resource.NewSubResource("post")
-//	// creates /users/:id/posts* routes
-//	resource.CRUD(postStorage)
+//	resource.HandleC(pat.New("search/:name"), searchHandler)
 type Resource struct {
 	*goji.Mux
 	// The singular name of the resource type("user", "post", etc)
@@ -60,19 +57,19 @@ type Resource struct {
 	Routes []string
 	// Map of relationships
 	Relationships map[string]Relationship
-	prefix        string
 }
 
 // NewResource is a resource constructor that makes no assumptions about routes
 // that you'd like to implement, but still provides some basic utilities for
 // managing routes and handling API calls.
+//
+// The prefix parameter causes all routes created within the resource to be prefixed.
 func NewResource(resourceType string) *Resource {
 	return &Resource{
 		Mux:           goji.NewMux(),
 		Type:          resourceType,
 		Relationships: map[string]Relationship{},
 		Routes:        []string{},
-		prefix:        "/",
 	}
 }
 
@@ -103,61 +100,61 @@ func (res *Resource) CRUD(storage store.CRUD) {
 // Post registers a `POST /resources` handler with the resource
 func (res *Resource) Post(storage store.Save) {
 	res.HandleFuncC(
-		pat.Post(res.Matcher()),
+		pat.Post(patRoot),
 		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			res.postHandler(ctx, w, r, storage)
 		},
 	)
 
-	res.addRoute(post, res.Matcher())
+	res.addRoute(post, patRoot)
 }
 
 // Get registers a `GET /resources/:id` handler for the resource
 func (res *Resource) Get(storage store.Get) {
 	res.HandleFuncC(
-		pat.Get(res.IDMatcher()),
+		pat.Get(patID),
 		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			res.getHandler(ctx, w, r, storage)
 		},
 	)
 
-	res.addRoute(get, res.IDMatcher())
+	res.addRoute(get, patID)
 }
 
 // List registers a `GET /resources` handler for the resource
 func (res *Resource) List(storage store.List) {
 	res.HandleFuncC(
-		pat.Get(res.Matcher()),
+		pat.Get(patRoot),
 		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			res.listHandler(ctx, w, r, storage)
 		},
 	)
 
-	res.addRoute(get, res.Matcher())
+	res.addRoute(get, patRoot)
 }
 
 // Delete registers a `DELETE /resources/:id` handler for the resource
 func (res *Resource) Delete(storage store.Delete) {
 	res.HandleFuncC(
-		pat.Delete(res.IDMatcher()),
+		pat.Delete(patID),
 		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			res.deleteHandler(ctx, w, r, storage)
 		},
 	)
 
-	res.addRoute(delete, res.IDMatcher())
+	res.addRoute(delete, patID)
 }
 
 // Patch registers a `PATCH /resources/:id` handler for the resource
 func (res *Resource) Patch(storage store.Update) {
 	res.HandleFuncC(
-		pat.Patch(res.IDMatcher()),
+		pat.Patch(patID),
 		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			res.patchHandler(ctx, w, r, storage)
 		},
 	)
 
-	res.addRoute(patch, res.IDMatcher())
+	res.addRoute(patch, patID)
 }
 
 // ToOne handles the /resources/:id/(relationships/)<resourceType> route which
@@ -208,7 +205,7 @@ func (res *Resource) relationshipHandler(
 ) {
 
 	// handle /.../:id/<resourceType>
-	matcher := fmt.Sprintf("%s/%s", res.IDMatcher(), resourceType)
+	matcher := fmt.Sprintf("%s/%s", patID, resourceType)
 	res.HandleFuncC(
 		pat.Get(matcher),
 		handler,
@@ -216,7 +213,7 @@ func (res *Resource) relationshipHandler(
 	res.addRoute(get, matcher)
 
 	// handle /.../:id/relationships/<resourceType>
-	relationshipMatcher := fmt.Sprintf("%s/relationships/%s", res.IDMatcher(), resourceType)
+	relationshipMatcher := fmt.Sprintf("%s/relationships/%s", patID, resourceType)
 	res.HandleFuncC(
 		pat.Get(relationshipMatcher),
 		handler,
@@ -227,7 +224,7 @@ func (res *Resource) relationshipHandler(
 // Mutate allows you to add custom actions to your resource types, it uses the
 // GET /(prefix/)resourceTypes/:id/<actionName> path format
 func (res *Resource) Mutate(actionName string, storage store.Get) {
-	matcher := path.Join(res.IDMatcher(), actionName)
+	matcher := path.Join(patID, actionName)
 
 	res.HandleFuncC(
 		pat.Get(matcher),
@@ -355,18 +352,8 @@ func (res *Resource) PluralType() string {
 	return res.Type + "s"
 }
 
-// IDMatcher returns a uri path matcher for the resource type
-func (res *Resource) IDMatcher() string {
-	return path.Join(res.Matcher(), ":id")
-}
-
-// Matcher returns the top level uri path matcher for the resource type
-func (res *Resource) Matcher() string {
-	return path.Join(res.prefix, res.PluralType())
-}
-
 func (res *Resource) addRoute(method string, route string) {
-	res.Routes = append(res.Routes, fmt.Sprintf("%s - %s", method, route))
+	res.Routes = append(res.Routes, fmt.Sprintf("%s - /%s%s", method, res.PluralType(), route))
 }
 
 // RouteTree prints a recursive route tree based on what the resource, and

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"strings"
 
 	"goji.io"
@@ -52,16 +53,22 @@ func New(prefix string, logger *log.Logger) *API {
 func (a *API) Add(resource *Resource) {
 
 	// ensure the resource is properly prefixed, and has access to the API logger
-	resource.prefix = a.prefix
 	resource.Logger = a.Logger
 
 	// track our associated resources, will enable auto-generation docs later
 	a.Resources[resource.Type] = resource
 
-	// Add resource wild card to the API mux. Use the resources Matcher() function
-	// after an API prefix is applied, as it does the dirty work of building the route
-	// automatically for us
-	a.Mux.HandleC(pat.New(resource.Matcher()+"*"), resource)
+	// Because of how prefix matches work:
+	// https://godoc.org/github.com/goji/goji/pat#hdr-Prefix_Matches
+	// We need two separate routes,
+	// /(prefix/)resources
+	matcher := path.Join(a.prefix, resource.PluralType())
+	a.Mux.HandleC(pat.New(matcher), resource)
+
+	// And:
+	// /(prefix/)resources/*
+	idMatcher := path.Join(a.prefix, resource.PluralType(), "*")
+	a.Mux.HandleC(pat.New(idMatcher), resource)
 }
 
 // RouteTree prints out all accepted routes for the API that use jshapi implemented

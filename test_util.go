@@ -18,18 +18,14 @@ const testType = "test"
 //
 // Will return objects and lists based upon the sampleObject that is specified here
 // in the constructor.
-func NewMockResource(prefix string, resourceType string, listCount int, sampleObject interface{}) *Resource {
-
+func NewMockResource(resourceType string, listCount int, sampleObject interface{}) *Resource {
 	mock := &MockStorage{
 		ResourceType:       resourceType,
 		ResourceAttributes: sampleObject,
 		ListCount:          listCount,
 	}
 
-	resource := NewCRUDResource(resourceType, mock)
-	resource.prefix = prefix
-
-	return resource
+	return NewCRUDResource(resourceType, mock)
 }
 
 func sampleObject(id string, resourceType string, sampleObject interface{}) *jsh.Object {

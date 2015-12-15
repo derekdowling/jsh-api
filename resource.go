@@ -2,7 +2,6 @@ package jshapi
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"path"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/derekdowling/go-json-spec-handler"
 	"github.com/derekdowling/jsh-api/store"
 )
@@ -52,7 +52,7 @@ type Resource struct {
 	// The singular name of the resource type("user", "post", etc)
 	Type string
 	// An implementation of Go's standard logger
-	Logger *log.Logger
+	Logger logrus.StdLogger
 	// Prefix is set if the resource is not the top level of URI, "/prefix/resources
 	Routes []string
 	// Map of relationships

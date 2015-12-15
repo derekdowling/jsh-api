@@ -7,8 +7,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
-
 	"goji.io"
 	"goji.io/pat"
 )
@@ -18,7 +16,7 @@ type API struct {
 	*goji.Mux
 	prefix    string
 	Resources map[string]*Resource
-	Logger    logrus.StdLogger
+	Logger    Logger
 }
 
 // New initializes a new top level API Resource Handler. The most basic implementation
@@ -31,7 +29,7 @@ type API struct {
 //
 //	api := New("v1", log.New(os.Stdout, "apiV1: ", log.Ldate|log.Ltime|log.Lshortfile))
 //
-func New(prefix string, logger logrus.StdLogger) *API {
+func New(prefix string, logger Logger) *API {
 
 	// ensure that our top level prefix is "/" prefixed
 	if !strings.HasPrefix(prefix, "/") {

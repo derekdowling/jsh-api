@@ -18,8 +18,8 @@
 		},
 		{
 			"ImportPath": "github.com/derekdowling/goji2-logger",
-			"Comment": "0.1",
-			"Rev": "5898dbf3a0942e2893889014110a44d9d57687af"
+			"Comment": "0.1-1-g4aa7280",
+			"Rev": "4aa7280e21d798c64d5a13f28e0a3a49f48d9813"
 		},
 		{
 			"ImportPath": "github.com/jtolds/gls",

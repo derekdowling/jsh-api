@@ -1,0 +1,11 @@
+language: go
+go:
+  - tip
+  - 1.5
+
+install:
+  - go get github.com/tools/godep
+  - go get github.com/smartystreets/goconvey
+
+script:
+  - godep go test ./...

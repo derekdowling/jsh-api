@@ -1,6 +1,7 @@
 # JSH-API
 
-[![GoDoc](https://godoc.org/github.com/derekdowling/go-json-spec-handler?status.png)](https://godoc.org/github.com/derekdowling/jsh-api) [![Build Status](https://travis-ci.org/derekdowling/jsh-api.svg?branch=master)](https://travis-ci.org/derekdowling/jsh-api)
+[![GoDoc](https://godoc.org/github.com/derekdowling/go-json-spec-handler?status.png)](https://godoc.org/github.com/derekdowling/jsh-api)
+[![Go Report Card](http://goreportcard.com/badge/manyminds/api2go)](http://goreportcard.com/report/derekdowling/jsh-api)
 
 A [JSON Specification](http://jsonapi.org) API Build created on top of
 [jsh](http://github.com/derekdowling/go-json-spec-handler). Bring your own

@@ -18,7 +18,7 @@
 		},
 		{
 			"ImportPath": "github.com/derekdowling/goji2-logger",
-			"Rev": "b75269285c3ee060fe737571ecd915ed96e7c18b"
+			"Rev": "cb065ce5b7d17c95644364caa72db0595dc3d64c"
 		},
 		{
 			"ImportPath": "github.com/jtolds/gls",
@@ -33,6 +33,11 @@
 			"ImportPath": "github.com/smartystreets/goconvey/convey",
 			"Comment": "1.5.0-398-gab7641a",
 			"Rev": "ab7641a0db76b0e88765294b1377b026ec01f26b"
+		},
+		{
+			"ImportPath": "github.com/zenazn/goji/web/mutil",
+			"Comment": "v0.9.0-34-gbf843a1",
+			"Rev": "bf843a174a08e846246b8945f8a9a853d84a256a"
 		},
 		{
 			"ImportPath": "goji.io",

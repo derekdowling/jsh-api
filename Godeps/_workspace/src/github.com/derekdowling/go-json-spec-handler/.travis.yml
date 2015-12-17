@@ -1,7 +1,7 @@
 language: go
 go:
-  - 1.5
   - tip
+  - 1.5
 
 install:
   - go get github.com/tools/godep
@@ -9,4 +9,4 @@ install:
   - godep restore
 
 script:
-  - godep test ./...
+  - godep go test ./...

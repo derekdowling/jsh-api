@@ -7,9 +7,14 @@ import (
 	"path"
 	"strings"
 
+	"github.com/derekdowling/goji2-logger"
+
 	"goji.io"
 	"goji.io/pat"
 )
+
+// Logger is the default logging interface used in JSH API
+type Logger gojilogger.Logger
 
 // API is used to direct HTTP requests to resources
 type API struct {
@@ -49,7 +54,7 @@ func New(prefix string, logger Logger) *API {
 	}
 
 	// register default middleware
-	api.UseC(api.logMiddleware)
+	api.UseC(gojilogger.With(logger))
 
 	return api
 }

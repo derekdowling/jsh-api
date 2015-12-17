@@ -6,15 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"goji.io"
-
-	"goji.io/pat"
-
-	"golang.org/x/net/context"
-
 	"github.com/derekdowling/go-json-spec-handler"
 	"github.com/derekdowling/go-json-spec-handler/client"
+	"github.com/goji/goji"
+	"github.com/goji/goji/pat"
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestResource(t *testing.T) {

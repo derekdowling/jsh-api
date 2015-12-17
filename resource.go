@@ -6,9 +6,8 @@ import (
 	"path"
 	"strings"
 
-	"goji.io/pat"
-
-	"goji.io"
+	"github.com/goji/goji"
+	"github.com/goji/goji/pat"
 
 	"golang.org/x/net/context"
 

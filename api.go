@@ -8,9 +8,8 @@ import (
 	"strings"
 
 	"github.com/derekdowling/goji2-logger"
-
-	"goji.io"
-	"goji.io/pat"
+	"github.com/goji/goji"
+	"github.com/goji/goji/pat"
 )
 
 // Logger is the default logging interface used in JSH API

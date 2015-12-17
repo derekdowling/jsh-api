@@ -54,7 +54,8 @@ func New(prefix string, logger Logger) *API {
 	}
 
 	// register default middleware
-	api.UseC(gojilogger.With(logger))
+	gojilogger.SetLogger(logger)
+	api.UseC(gojilogger.Middleware)
 
 	return api
 }

@@ -7,6 +7,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/derekdowling/goji2-logger"
+
 	"goji.io"
 	"goji.io/pat"
 )
@@ -16,7 +18,7 @@ type API struct {
 	*goji.Mux
 	prefix    string
 	Resources map[string]*Resource
-	Logger    Logger
+	Logger    gojilogger.Logger
 }
 
 // New initializes a new top level API Resource Handler. The most basic implementation
@@ -49,7 +51,7 @@ func New(prefix string, logger Logger) *API {
 	}
 
 	// register default middleware
-	api.UseC(api.logMiddleware)
+	api.UseC(gojilogger.With(logger))
 
 	return api
 }

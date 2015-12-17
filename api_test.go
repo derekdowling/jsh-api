@@ -42,7 +42,6 @@ func TestAPI(t *testing.T) {
 			_, resp, err = jsc.Patch(baseURL, patchObj)
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			So(err, ShouldBeNil)
-			So(1, ShouldEqual, 2)
 		})
 	})
 }

@@ -13,12 +13,15 @@ import (
 	"goji.io/pat"
 )
 
+// Logger is the default logging interface used in JSH API
+type Logger gojilogger.Logger
+
 // API is used to direct HTTP requests to resources
 type API struct {
 	*goji.Mux
 	prefix    string
 	Resources map[string]*Resource
-	Logger    gojilogger.Logger
+	Logger    Logger
 }
 
 // New initializes a new top level API Resource Handler. The most basic implementation

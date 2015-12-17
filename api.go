@@ -40,12 +40,18 @@ func New(prefix string, logger Logger) *API {
 		logger = log.New(os.Stdout, "jshapi: ", log.Ldate|log.Ltime|log.Lshortfile)
 	}
 
-	return &API{
+	// create our new logger
+	api := &API{
 		Mux:       goji.NewMux(),
 		prefix:    prefix,
 		Resources: map[string]*Resource{},
 		Logger:    logger,
 	}
+
+	// register default middleware
+	api.UseC(api.logMiddleware)
+
+	return api
 }
 
 // Add implements mux support for a given resource which is effectively handled as:

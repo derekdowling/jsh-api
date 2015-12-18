@@ -26,7 +26,7 @@ var Logger ILogger = log.New(os.Stderr, "jshapi: ", log.LstdFlags)
 func SendAndLog(ctx context.Context, w http.ResponseWriter, r *http.Request, sendable jsh.Sendable) {
 
 	intentionalErr, isType := sendable.(*jsh.Error)
-	if isType {
+	if isType && intentionalErr.Status() >= 500 {
 		Logger.Printf("Returning ISE for: %s", intentionalErr.Internal())
 	}
 

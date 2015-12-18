@@ -12,8 +12,8 @@
 		},
 		{
 			"ImportPath": "github.com/derekdowling/go-json-spec-handler",
-			"Comment": "0.6.2-13-g28c960e",
-			"Rev": "28c960e7e48548bd3df4edff3e7d40ed52289e61"
+			"Comment": "0.6.3-1-gea63c83",
+			"Rev": "ea63c83d05bee94eb58f7227b8a91ddddc75a83c"
 		},
 		{
 			"ImportPath": "github.com/derekdowling/goji2-logger",

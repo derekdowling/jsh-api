@@ -11,15 +11,9 @@ import (
 	"github.com/derekdowling/go-stdlogger"
 )
 
-// ILogger is the default standard logger used in JSH API:
-// https://godoc.org/github.com/derekdowling/goji2-logger#Logger
-// This should be compatible with almost all loggers including the std log package
-// and Logrus.
-type ILogger std.Logger
-
 // Logger can be overridden with your own logger to utilize any custom features
-// it might have
-var Logger ILogger = log.New(os.Stderr, "jshapi: ", log.LstdFlags)
+// it might have. Interface defined here: https://github.com/derekdowling/go-stdlogger/blob/master/logger.go
+var Logger std.Logger = log.New(os.Stderr, "jshapi: ", log.LstdFlags)
 
 // SendAndLog is a jsh wrapper function that first prepares a jsh.Sendable response,
 // and then handles logging 5XX errors that it encounters in the process.

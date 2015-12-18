@@ -2,6 +2,9 @@ package jshapi
 
 import (
 	"log"
+	"net/http"
+
+	"golang.org/x/net/context"
 
 	"github.com/derekdowling/go-json-spec-handler"
 )
@@ -35,4 +38,19 @@ func sampleObject(id string, resourceType string, sampleObject interface{}) *jsh
 	}
 
 	return object
+}
+
+// SendAndLog is a jsh wrapper function that first prepares a jsh.Sendable response,
+// and then handles logging 5XX errors that it encounters in the process.
+func SendAndLog(ctx context.Context, w http.ResponseWriter, r *http.Request, sendable jsh.Sendable) {
+	response, err := sendable.Prepare(r, true)
+
+	if err != nil && response.HTTPStatus >= 500 {
+		Logger.Printf("Error: %s\n", err.Internal())
+	}
+
+	sendErr := jsh.SendResponse(w, r, response)
+	if sendErr != nil {
+		Logger.Println(err.Error())
+	}
 }

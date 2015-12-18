@@ -15,7 +15,7 @@ func TestAPI(t *testing.T) {
 	Convey("API Tests", t, func() {
 
 		resourceType := "foo"
-		api := New("api", nil)
+		api := New("api")
 
 		So(api.prefix, ShouldEqual, "/api")
 

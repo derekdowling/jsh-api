@@ -8,14 +8,14 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/derekdowling/go-json-spec-handler"
-	"github.com/derekdowling/goji2-logger"
+	"github.com/derekdowling/go-stdlogger"
 )
 
 // ILogger is the default standard logger used in JSH API:
 // https://godoc.org/github.com/derekdowling/goji2-logger#Logger
 // This should be compatible with almost all loggers including the std log package
 // and Logrus.
-type ILogger gojilogger.Logger
+type ILogger std.Logger
 
 // Logger can be overridden with your own logger to utilize any custom features
 // it might have

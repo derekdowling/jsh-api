@@ -62,6 +62,7 @@ GET /resources/:id/otherResource(s)
 
 ```
 GET /resources/:id/<action>
+```
 
 ### Other
 

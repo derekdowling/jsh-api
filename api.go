@@ -2,8 +2,6 @@ package jshapi
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"path"
 	"strings"
 
@@ -12,12 +10,6 @@ import (
 
 	"github.com/derekdowling/goji2-logger"
 )
-
-// Logger is the default standard logger used in JSH API. You may override the
-// default with anything that satisfiest:
-// https://godoc.org/github.com/derekdowling/goji2-logger#Logger
-// which is most loggers including the std log package and logrus.
-var Logger gojilogger.Logger = log.New(os.Stderr, "jshapi: ", log.LstdFlags)
 
 // API is used to direct HTTP requests to resources
 type API struct {

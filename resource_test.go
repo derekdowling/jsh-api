@@ -35,6 +35,19 @@ func TestResource(t *testing.T) {
 
 		So(len(resource.Routes), ShouldEqual, 5)
 
+		Convey("->NewResource()", func() {
+
+			Convey("should properly handle a plural resource type", func() {
+				resource := NewResource("users")
+				So(resource.Type, ShouldEqual, "user")
+			})
+
+			Convey("should properly handle a single resource type", func() {
+				resource := NewResource("user")
+				So(resource.Type, ShouldEqual, "user")
+			})
+		})
+
 		Convey("->Post()", func() {
 			object := sampleObject("", resourceType, attrs)
 			doc, resp, err := jsc.Post(baseURL, object)

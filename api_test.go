@@ -32,16 +32,16 @@ func TestAPI(t *testing.T) {
 			server := httptest.NewServer(api)
 			baseURL := server.URL + api.prefix
 
-			_, resp, err := jsc.GetObject(baseURL, resourceType, "1")
+			_, resp, err := jsc.Fetch(baseURL, resourceType, "1")
 
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			So(err, ShouldBeNil)
 
 			patchObj, err := jsh.NewObject("1", resourceType, testAttrs)
 
-			_, resp, err = jsc.Patch(baseURL, patchObj)
+			_, resp, patchErr := jsc.Patch(baseURL, patchObj)
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			So(err, ShouldBeNil)
+			So(patchErr, ShouldBeNil)
 		})
 	})
 }

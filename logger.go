@@ -20,18 +20,12 @@ var Logger std.Logger = log.New(os.Stderr, "jshapi: ", log.LstdFlags)
 func SendAndLog(ctx context.Context, w http.ResponseWriter, r *http.Request, sendable jsh.Sendable) {
 
 	intentionalErr, isType := sendable.(*jsh.Error)
-	if isType && intentionalErr.Status() >= 500 {
-		Logger.Printf("Returning ISE for: %s", intentionalErr.Internal())
+	if isType && intentionalErr.Status >= 500 {
+		Logger.Printf("Returning ISE: %s\n", intentionalErr.Error())
 	}
 
-	response, err := sendable.Prepare(r, true)
-
-	if err != nil && response.HTTPStatus >= 500 {
-		Logger.Printf("Error preparing response: %s\n", err.Internal())
-	}
-
-	sendErr := jsh.SendResponse(w, r, response)
-	if sendErr != nil {
-		Logger.Println(err.Error())
+	sendErr := jsh.Send(w, r, sendable)
+	if sendErr != nil && sendErr.Status >= 500 {
+		Logger.Printf("Error sending response: %s\n", sendErr.Error())
 	}
 }

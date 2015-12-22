@@ -12,20 +12,24 @@ import (
 	"github.com/derekdowling/go-json-spec-handler"
 )
 
-// ParseObject validates the HTTP response and parses out the JSON object from the
-// body if possible
-func ParseObject(response *http.Response) (*jsh.Object, *jsh.Error) {
-	return buildParser(response).GetObject()
+/*
+Document validates the HTTP response and attempts to parse a JSON API compatible
+Document from the response body before closing it.
+*/
+func Document(response *http.Response) (*jsh.Document, *jsh.Error) {
+	document, err := buildParser(response).Document(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	document.Status = response.StatusCode
+	return document, nil
 }
 
-// ParseList validates the HTTP response and parses out the JSON list from the
-// body if possible
-func ParseList(response *http.Response) (jsh.List, *jsh.Error) {
-	return buildParser(response).GetList()
-}
-
-// DumpBody is a convenience function that parses the body of the response into a
-// string BUT DOESN'T close the ReadCloser. Useful for debugging.
+/*
+DumpBody is a convenience function that parses the body of the response into a
+string BUT DOESN'T close the ReadCloser. Useful for debugging.
+*/
 func DumpBody(response *http.Response) (string, *jsh.Error) {
 
 	byteData, err := ioutil.ReadAll(response.Body)
@@ -40,12 +44,13 @@ func buildParser(response *http.Response) *jsh.Parser {
 	return &jsh.Parser{
 		Method:  "",
 		Headers: response.Header,
-		Payload: response.Body,
 	}
 }
 
-// setPath builds a JSON url.Path for a given resource type. Typically this just
-// envolves concatting a pluralized resource name
+/*
+setPath builds a JSON url.Path for a given resource type. Typically this just
+envolves concatting a pluralized resource name.
+*/
 func setPath(url *url.URL, resource string) {
 
 	if url.Path != "" && !strings.HasSuffix(url.Path, "/") {
@@ -55,8 +60,10 @@ func setPath(url *url.URL, resource string) {
 	url.Path = fmt.Sprintf("%s%ss", url.Path, resource)
 }
 
-// setIDPath creates a JSON url.Path for a specific resource type including an
-// ID specifier.
+/*
+setIDPath creates a JSON url.Path for a specific resource type including an
+ID specifier.
+*/
 func setIDPath(url *url.URL, resource string, id string) {
 	setPath(url, resource)
 
@@ -69,12 +76,14 @@ func setIDPath(url *url.URL, resource string, id string) {
 // spec compatible, and then marshals it to JSON
 func objectToPayload(request *http.Request, object *jsh.Object) ([]byte, *jsh.Error) {
 
-	payload, err := object.Prepare(request, false)
+	err := object.Validate(request, false)
 	if err != nil {
 		return nil, jsh.ISE(fmt.Sprintf("Error preparing object: %s", err.Error()))
 	}
 
-	jsonContent, jsonErr := json.MarshalIndent(payload, "", "  ")
+	doc := jsh.Build(object)
+
+	jsonContent, jsonErr := json.MarshalIndent(doc, "", "  ")
 	if jsonErr != nil {
 		return nil, jsh.ISE(fmt.Sprintf("Unable to prepare JSON content: %s", jsonErr))
 	}
@@ -84,7 +93,7 @@ func objectToPayload(request *http.Request, object *jsh.Object) ([]byte, *jsh.Er
 
 // sendPayloadRequest is required for sending JSON payload related requests
 // because by default the http package does not set Content-Length headers
-func sendObjectRequest(request *http.Request, object *jsh.Object) (*jsh.Object, *http.Response, *jsh.Error) {
+func doObjectRequest(request *http.Request, object *jsh.Object) (*jsh.Document, *http.Response, *jsh.Error) {
 
 	payload, err := objectToPayload(request, object)
 	if err != nil {
@@ -94,10 +103,13 @@ func sendObjectRequest(request *http.Request, object *jsh.Object) (*jsh.Object, 
 	// prepare payload and corresponding headers
 	request.Body = jsh.CreateReadCloser(payload)
 	request.Header.Add("Content-Type", jsh.ContentType)
-	request.Header.Set("Content-Length", strconv.Itoa(len(payload)))
+
+	contentLength := strconv.Itoa(len(payload))
+	request.ContentLength = int64(len(payload))
+	request.Header.Set("Content-Length", contentLength)
 
 	client := &http.Client{}
-	response, clientErr := client.Do(request)
+	httpResponse, clientErr := client.Do(request)
 
 	if clientErr != nil {
 		return nil, nil, jsh.ISE(fmt.Sprintf(
@@ -105,10 +117,10 @@ func sendObjectRequest(request *http.Request, object *jsh.Object) (*jsh.Object, 
 		))
 	}
 
-	object, objErr := ParseObject(response)
-	if objErr != nil {
-		return nil, response, objErr
+	document, err := Document(httpResponse)
+	if err != nil {
+		return nil, httpResponse, err
 	}
 
-	return object, response, nil
+	return document, httpResponse, nil
 }

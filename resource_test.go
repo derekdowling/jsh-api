@@ -37,38 +37,38 @@ func TestResource(t *testing.T) {
 
 		Convey("->Post()", func() {
 			object := sampleObject("", resourceType, attrs)
-			object, resp, err := jsc.Post(baseURL, object)
+			doc, resp, err := jsc.Post(baseURL, object)
 
 			So(resp.StatusCode, ShouldEqual, http.StatusCreated)
 			So(err, ShouldBeNil)
-			So(object.ID, ShouldEqual, "1")
+			So(doc.Data[0].ID, ShouldEqual, "1")
 		})
 
 		Convey("->List()", func() {
-			list, resp, err := jsc.GetList(baseURL, resourceType)
+			doc, resp, err := jsc.List(baseURL, resourceType)
 
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			So(err, ShouldBeNil)
-			So(len(list), ShouldEqual, 2)
-			So(list[0].ID, ShouldEqual, "1")
+			So(len(doc.Data), ShouldEqual, 2)
+			So(doc.Data[0].ID, ShouldEqual, "1")
 		})
 
-		Convey("->Get()", func() {
-			object, resp, err := jsc.GetObject(baseURL, resourceType, "3")
+		Convey("->Fetch()", func() {
+			doc, resp, err := jsc.Fetch(baseURL, resourceType, "3")
 
 			log.Printf("resp = %+v\n", resp.Request)
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			So(err, ShouldBeNil)
-			So(object.ID, ShouldEqual, "3")
+			So(doc.Data[0].ID, ShouldEqual, "3")
 		})
 
 		Convey("->Patch()", func() {
 			object := sampleObject("1", resourceType, attrs)
-			object, resp, err := jsc.Patch(baseURL, object)
+			doc, resp, err := jsc.Patch(baseURL, object)
 
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
 			So(err, ShouldBeNil)
-			So(object.ID, ShouldEqual, "1")
+			So(doc.Data[0].ID, ShouldEqual, "1")
 		})
 
 		Convey("->Delete()", func() {
@@ -107,11 +107,11 @@ func TestMutateHandler(t *testing.T) {
 		})
 
 		Convey("->Custom()", func() {
-			response, err := jsc.Get(baseURL + "/mutate")
-			So(err, ShouldBeNil)
+			doc, response, err := jsc.Get(baseURL + "/mutate")
 
-			_, err = jsc.ParseObject(response)
 			So(err, ShouldBeNil)
+			So(response.StatusCode, ShouldEqual, http.StatusOK)
+			So(doc.Data, ShouldNotBeEmpty)
 		})
 	})
 }
@@ -148,27 +148,23 @@ func TestToOne(t *testing.T) {
 		Convey("->ToOne()", func() {
 
 			Convey("/foo/bars/:id/baz", func() {
-				resp, err := jsc.Get(baseURL + "/" + subResourceType)
+				doc, resp, err := jsc.Get(baseURL + "/" + subResourceType)
 
 				So(resp.StatusCode, ShouldEqual, http.StatusOK)
 				So(err, ShouldBeNil)
 
-				object, err := jsc.ParseObject(resp)
-
 				So(err, ShouldBeNil)
-				So(object.ID, ShouldEqual, "1")
+				So(doc.Data[0].ID, ShouldEqual, "1")
 			})
 
 			Convey("/foo/bars/:id/relationships/baz", func() {
-				resp, err := jsc.Get(baseURL + "/relationships/" + subResourceType)
+				doc, resp, err := jsc.Get(baseURL + "/relationships/" + subResourceType)
 
 				So(resp.StatusCode, ShouldEqual, http.StatusOK)
 				So(err, ShouldBeNil)
 
-				obj, err := jsc.ParseObject(resp)
-
 				So(err, ShouldBeNil)
-				So(obj.ID, ShouldEqual, "1")
+				So(doc.Data[0].ID, ShouldEqual, "1")
 			})
 		})
 	})
@@ -209,29 +205,25 @@ func TestToMany(t *testing.T) {
 		Convey("->ToOne()", func() {
 
 			Convey("/foo/bars/:id/bazs", func() {
-				resp, err := jsc.Get(baseURL + "/" + subResourceType + "s")
+				doc, resp, err := jsc.Get(baseURL + "/" + subResourceType + "s")
 
 				So(resp.StatusCode, ShouldEqual, http.StatusOK)
 				So(err, ShouldBeNil)
 
-				list, err := jsc.ParseList(resp)
-
 				So(err, ShouldBeNil)
-				So(len(list), ShouldEqual, 2)
-				So(list[0].ID, ShouldEqual, "1")
+				So(len(doc.Data), ShouldEqual, 2)
+				So(doc.Data[0].ID, ShouldEqual, "1")
 			})
 
 			Convey("/foo/bars/:id/relationships/bazs", func() {
-				resp, err := jsc.Get(baseURL + "/relationships/" + subResourceType + "s")
+				doc, resp, err := jsc.Get(baseURL + "/relationships/" + subResourceType + "s")
 
 				So(resp.StatusCode, ShouldEqual, http.StatusOK)
 				So(err, ShouldBeNil)
 
-				list, err := jsc.ParseList(resp)
-
 				So(err, ShouldBeNil)
-				So(len(list), ShouldEqual, 2)
-				So(list[0].ID, ShouldEqual, "1")
+				So(len(doc.Data), ShouldEqual, 2)
+				So(doc.Data[0].ID, ShouldEqual, "1")
 			})
 		})
 

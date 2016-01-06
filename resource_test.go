@@ -104,7 +104,7 @@ func TestMutateHandler(t *testing.T) {
 		resourceType := "bar"
 		resource := NewMockResource(resourceType, 2, attrs)
 
-		handler := func(ctx context.Context, id string) (*jsh.Object, *jsh.Error) {
+		handler := func(ctx context.Context, id string) (*jsh.Object, jsh.ErrorType) {
 			object := sampleObject(id, resourceType, attrs)
 			return object, nil
 		}
@@ -140,7 +140,7 @@ func TestToOne(t *testing.T) {
 		resourceType := "bar"
 		resource := NewMockResource(resourceType, 2, attrs)
 
-		relationshipHandler := func(ctx context.Context, resourceID string) (*jsh.Object, *jsh.Error) {
+		relationshipHandler := func(ctx context.Context, resourceID string) (*jsh.Object, jsh.ErrorType) {
 			return sampleObject("1", "baz", map[string]string{"baz": "ball"}), nil
 		}
 
@@ -194,7 +194,7 @@ func TestToMany(t *testing.T) {
 		resourceType := "bar"
 		resource := NewMockResource(resourceType, 2, attrs)
 
-		relationshipHandler := func(ctx context.Context, resourceID string) (jsh.List, *jsh.Error) {
+		relationshipHandler := func(ctx context.Context, resourceID string) (jsh.List, jsh.ErrorType) {
 			return jsh.List{
 				sampleObject("1", "baz", map[string]string{"baz": "ball"}),
 				sampleObject("2", "baz", map[string]string{"baz": "ball2"}),

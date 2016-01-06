@@ -245,9 +245,9 @@ func (res *Resource) Mutate(actionName string, storage store.Get) {
 
 // POST /resources
 func (res *Resource) postHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Save) {
-	parsedObject, err := jsh.ParseObject(r)
-	if err != nil {
-		SendAndLog(ctx, w, r, err)
+	parsedObject, parseErr := jsh.ParseObject(r)
+	if parseErr != nil {
+		SendAndLog(ctx, w, r, parseErr)
 		return
 	}
 
@@ -299,9 +299,9 @@ func (res *Resource) deleteHandler(ctx context.Context, w http.ResponseWriter, r
 
 // PATCH /resources/:id
 func (res *Resource) patchHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Update) {
-	parsedObject, err := jsh.ParseObject(r)
-	if err != nil {
-		SendAndLog(ctx, w, r, err)
+	parsedObject, parseErr := jsh.ParseObject(r)
+	if parseErr != nil {
+		SendAndLog(ctx, w, r, parseErr)
 		return
 	}
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"reflect"
 	"strings"
 
 	"goji.io"
@@ -246,13 +247,13 @@ func (res *Resource) Mutate(actionName string, storage store.Get) {
 // POST /resources
 func (res *Resource) postHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Save) {
 	parsedObject, parseErr := jsh.ParseObject(r)
-	if parseErr != nil {
+	if parseErr != nil && reflect.ValueOf(parseErr).IsNil() == false {
 		SendAndLog(ctx, w, r, parseErr)
 		return
 	}
 
 	object, err := storage(ctx, parsedObject)
-	if err != nil {
+	if err != nil && reflect.ValueOf(err).IsNil() == false {
 		SendAndLog(ctx, w, r, err)
 		return
 	}
@@ -265,7 +266,7 @@ func (res *Resource) getHandler(ctx context.Context, w http.ResponseWriter, r *h
 	id := pat.Param(ctx, "id")
 
 	object, err := storage(ctx, id)
-	if err != nil {
+	if err != nil && reflect.ValueOf(err).IsNil() == false {
 		SendAndLog(ctx, w, r, err)
 		return
 	}
@@ -276,7 +277,7 @@ func (res *Resource) getHandler(ctx context.Context, w http.ResponseWriter, r *h
 // GET /resources
 func (res *Resource) listHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.List) {
 	list, err := storage(ctx)
-	if err != nil {
+	if err != nil && reflect.ValueOf(err).IsNil() == false {
 		SendAndLog(ctx, w, r, err)
 		return
 	}
@@ -289,7 +290,7 @@ func (res *Resource) deleteHandler(ctx context.Context, w http.ResponseWriter, r
 	id := pat.Param(ctx, "id")
 
 	err := storage(ctx, id)
-	if err != nil {
+	if err != nil && reflect.ValueOf(err).IsNil() == false {
 		SendAndLog(ctx, w, r, err)
 		return
 	}
@@ -300,13 +301,13 @@ func (res *Resource) deleteHandler(ctx context.Context, w http.ResponseWriter, r
 // PATCH /resources/:id
 func (res *Resource) patchHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Update) {
 	parsedObject, parseErr := jsh.ParseObject(r)
-	if parseErr != nil {
+	if parseErr != nil && reflect.ValueOf(parseErr).IsNil() == false {
 		SendAndLog(ctx, w, r, parseErr)
 		return
 	}
 
 	object, err := storage(ctx, parsedObject)
-	if err != nil {
+	if err != nil && reflect.ValueOf(err).IsNil() == false {
 		SendAndLog(ctx, w, r, err)
 		return
 	}
@@ -319,7 +320,7 @@ func (res *Resource) toManyHandler(ctx context.Context, w http.ResponseWriter, r
 	id := pat.Param(ctx, "id")
 
 	list, err := storage(ctx, id)
-	if err != nil {
+	if err != nil && reflect.ValueOf(err).IsNil() == false {
 		SendAndLog(ctx, w, r, err)
 		return
 	}
@@ -332,7 +333,7 @@ func (res *Resource) mutateHandler(ctx context.Context, w http.ResponseWriter, r
 	id := pat.Param(ctx, "id")
 
 	response, err := storage(ctx, id)
-	if err != nil {
+	if err != nil && reflect.ValueOf(err).IsNil() == false {
 		SendAndLog(ctx, w, r, err)
 		return
 	}

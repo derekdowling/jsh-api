@@ -295,7 +295,7 @@ func (res *Resource) deleteHandler(ctx context.Context, w http.ResponseWriter, r
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // PATCH /resources/:id

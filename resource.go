@@ -28,8 +28,7 @@ const (
 
 /*
 Resource holds the necessary state for creating a REST API endpoint for a
-given resource type. Will be accessible via `/(prefix/)types` where the
-proceeding `prefix/` is only precent if it is not empty.
+given resource type. Will be accessible via `/<type>`.
 
 Using NewCRUDResource you can generate a generic CRUD handler for a
 JSON Specification Resource end point. If you wish to only implement a subset
@@ -44,7 +43,7 @@ your own routes using the goji.Mux API:
 		fmt.Fprintf(w, "Hello, %s!", name)
 	}
 
-	resource := jshapi.NewCRUDResource("user", userStorage)
+	resource := jshapi.NewCRUDResource("users", userStorage)
 	// creates /users/search/:name
 	resource.HandleC(pat.New("search/:name"), searchHandler)
 */
@@ -52,7 +51,7 @@ type Resource struct {
 	*goji.Mux
 	// The singular name of the resource type("user", "post", etc)
 	Type string
-	// Prefix is set if the resource is not the top level of URI, "/prefix/resources
+	// Routes is a list of routes registered to the resource
 	Routes []string
 	// Map of relationships
 	Relationships map[string]Relationship
@@ -66,11 +65,6 @@ managing routes and handling API calls.
 The prefix parameter causes all routes created within the resource to be prefixed.
 */
 func NewResource(resourceType string) *Resource {
-
-	if strings.HasSuffix(resourceType, "s") {
-		resourceType = strings.TrimSuffix(resourceType, "s")
-	}
-
 	return &Resource{
 		Mux:           goji.NewMux(),
 		Type:          resourceType,
@@ -91,11 +85,11 @@ CRUD is syntactic sugar and a shortcut for registering all JSON API CRUD
 routes for a compatible storage implementation:
 
 Registers handlers for:
-	GET    /[prefix/]types
-	POST   /[prefix/]types
-	GET    /[prefix/]types/:id
-	DELETE /[prefix/]types/:id
-	PATCH  /[prefix/]types/:id
+	GET    /resource
+	POST   /resource
+	GET    /resource/:id
+	DELETE /resource/:id
+	PATCH  /resource/:id
 */
 func (res *Resource) CRUD(storage store.CRUD) {
 	res.Get(storage.Get)
@@ -105,7 +99,7 @@ func (res *Resource) CRUD(storage store.CRUD) {
 	res.Delete(storage.Delete)
 }
 
-// Post registers a `POST /resources` handler with the resource
+// Post registers a `POST /resource` handler with the resource
 func (res *Resource) Post(storage store.Save) {
 	res.HandleFuncC(
 		pat.Post(patRoot),
@@ -117,7 +111,7 @@ func (res *Resource) Post(storage store.Save) {
 	res.addRoute(post, patRoot)
 }
 
-// Get registers a `GET /resources/:id` handler for the resource
+// Get registers a `GET /resource/:id` handler for the resource
 func (res *Resource) Get(storage store.Get) {
 	res.HandleFuncC(
 		pat.Get(patID),
@@ -129,7 +123,7 @@ func (res *Resource) Get(storage store.Get) {
 	res.addRoute(get, patID)
 }
 
-// List registers a `GET /resources` handler for the resource
+// List registers a `GET /resource` handler for the resource
 func (res *Resource) List(storage store.List) {
 	res.HandleFuncC(
 		pat.Get(patRoot),
@@ -141,7 +135,7 @@ func (res *Resource) List(storage store.List) {
 	res.addRoute(get, patRoot)
 }
 
-// Delete registers a `DELETE /resources/:id` handler for the resource
+// Delete registers a `DELETE /resource/:id` handler for the resource
 func (res *Resource) Delete(storage store.Delete) {
 	res.HandleFuncC(
 		pat.Delete(patID),
@@ -153,7 +147,7 @@ func (res *Resource) Delete(storage store.Delete) {
 	res.addRoute(delete, patID)
 }
 
-// Patch registers a `PATCH /resources/:id` handler for the resource
+// Patch registers a `PATCH /resource/:id` handler for the resource
 func (res *Resource) Patch(storage store.Update) {
 	res.HandleFuncC(
 		pat.Patch(patID),
@@ -165,7 +159,7 @@ func (res *Resource) Patch(storage store.Update) {
 	res.addRoute(patch, patID)
 }
 
-// ToOne handles the /resources/:id/(relationships/)<resourceType> route which
+// ToOne handles the /resource/:id/(relationships/)<resourceType> route which
 // represents a One-To-One relationship between the resource and the
 // specified resourceType
 func (res *Resource) ToOne(
@@ -341,13 +335,10 @@ func (res *Resource) mutateHandler(ctx context.Context, w http.ResponseWriter, r
 	SendAndLog(ctx, w, r, response)
 }
 
-// PluralType returns the resource's name, but pluralized
-func (res *Resource) PluralType() string {
-	return res.Type + "s"
-}
-
+// addRoute adds the new method and route to a route Tree for debugging and
+// informational purposes.
 func (res *Resource) addRoute(method string, route string) {
-	res.Routes = append(res.Routes, fmt.Sprintf("%s - /%s%s", method, res.PluralType(), route))
+	res.Routes = append(res.Routes, fmt.Sprintf("%s - /%s%s", method, res.Type, route))
 }
 
 // RouteTree prints a recursive route tree based on what the resource, and

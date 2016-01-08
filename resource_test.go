@@ -23,7 +23,7 @@ func TestResource(t *testing.T) {
 			"foo": "bar",
 		}
 
-		resourceType := "foo"
+		resourceType := "foos"
 		resource := NewMockResource(resourceType, 2, attrs)
 
 		mux := goji.NewMux()
@@ -37,14 +37,12 @@ func TestResource(t *testing.T) {
 
 		Convey("->NewResource()", func() {
 
-			Convey("should properly handle a plural resource type", func() {
+			Convey("should be agnostic to plurality", func() {
 				resource := NewResource("users")
-				So(resource.Type, ShouldEqual, "user")
-			})
+				So(resource.Type, ShouldEqual, "users")
 
-			Convey("should properly handle a single resource type", func() {
-				resource := NewResource("user")
-				So(resource.Type, ShouldEqual, "user")
+				resource2 := NewResource("user")
+				So(resource2.Type, ShouldEqual, "user")
 			})
 		})
 
@@ -87,7 +85,7 @@ func TestResource(t *testing.T) {
 		Convey("->Delete()", func() {
 			resp, err := jsc.Delete(baseURL, resourceType, "1")
 
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			So(resp.StatusCode, ShouldEqual, http.StatusNoContent)
 			So(err, ShouldBeNil)
 		})
 	})
@@ -101,7 +99,7 @@ func TestMutateHandler(t *testing.T) {
 			"foo": "bar",
 		}
 
-		resourceType := "bar"
+		resourceType := "bars"
 		resource := NewMockResource(resourceType, 2, attrs)
 
 		handler := func(ctx context.Context, id string) (*jsh.Object, jsh.ErrorType) {

@@ -2,10 +2,13 @@ package gojilogger
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"goji.io/pattern"
 
 	"goji.io"
 
@@ -42,7 +45,7 @@ func SetLogger(newLogger std.Logger) {
 // those printed elsewhere in the application.
 func Middleware(next goji.Handler) goji.Handler {
 	middleware := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		printRequest(r)
+		printRequest(ctx, r)
 
 		// WrapWriter lets us peek at ResponseWriter outputs
 		lw := mutil.WrapWriter(w)
@@ -62,14 +65,21 @@ func Middleware(next goji.Handler) goji.Handler {
 	return goji.HandlerFunc(middleware)
 }
 
-func printRequest(r *http.Request) {
+func printRequest(ctx context.Context, r *http.Request) {
 	var buf bytes.Buffer
 
-	buf.WriteString("Serving ")
+	buf.WriteString("Serving route: ")
+
+	// Goji routing details
+	colorWrite(&buf, bGreen, "%s", pattern.Path(ctx))
+
+	// Server details
+	buf.WriteString(fmt.Sprintf(" from %s ", r.RemoteAddr))
+
+	// Request details
+	buf.WriteString("for ")
 	colorWrite(&buf, bMagenta, "%s ", r.Method)
-	colorWrite(&buf, nBlue, "%q ", r.URL.String())
-	buf.WriteString("from ")
-	buf.WriteString(r.RemoteAddr)
+	colorWrite(&buf, bBlue, "%q", r.URL.String())
 
 	log.Print(buf.String())
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -25,11 +26,29 @@ const (
 	AcceptableResponse = 5 * time.Second
 )
 
-var logger std.Logger = log.New(os.Stderr, "", log.LstdFlags)
+// Logger contains instance state for a goji2logger to avoid configuration
+// collisions if this middleware is used in multiple places
+type Logger struct {
+	// Logger is a https://github.com/derekdowling/go-stdlogger
+	Logger std.Logger
+	// Debug will increase verbosity of logging information, and causes Query params not
+	// to be omitted. Do NOT use in production otherwise you risk logging sensitive
+	// information.
+	Debug bool
+}
 
-// SetLogger allows you to use your own logging solution
-func SetLogger(newLogger std.Logger) {
-	logger = newLogger
+// New creates a new goji2logger instance
+func New(logger std.Logger, debug bool) *Logger {
+	l := &Logger{
+		Debug:  debug,
+		Logger: logger,
+	}
+
+	if l.Logger == nil {
+		l.Logger = log.New(os.Stderr, "", log.LstdFlags)
+	}
+
+	return l
 }
 
 // Middleware logs the start and end of each request, along
@@ -37,15 +56,12 @@ func SetLogger(newLogger std.Logger) {
 // and how long it took to return. When standard output is a TTY, Logger will
 // print in color, otherwise it will print in black and white.
 //
-// Logger has been designed explicitly to be good enough for use in small
-// applications and for people just getting started with Goji. It is expected
-// that applications will eventually outgrow this middleware and replace it with
-// a custom request logger, such as one that produces machine-parseable output,
-// outputs logs to a different service (e.g., syslog), or formats lines like
-// those printed elsewhere in the application.
-func Middleware(next goji.Handler) goji.Handler {
+// Use like so with Goji2:
+//	gLogger := gojilogger.New(nil, false)
+//	yourGoji.UseC(gLogger.Middleware)
+func (l *Logger) Middleware(next goji.Handler) goji.Handler {
 	middleware := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		printRequest(ctx, r)
+		l.printRequest(ctx, r)
 
 		// WrapWriter lets us peek at ResponseWriter outputs
 		lw := mutil.WrapWriter(w)
@@ -59,14 +75,18 @@ func Middleware(next goji.Handler) goji.Handler {
 
 		finishTime := time.Now()
 
-		printResponse(lw, finishTime.Sub(startTime))
+		l.printResponse(lw, finishTime.Sub(startTime))
 	}
 
 	return goji.HandlerFunc(middleware)
 }
 
-func printRequest(ctx context.Context, r *http.Request) {
+func (l *Logger) printRequest(ctx context.Context, r *http.Request) {
 	var buf bytes.Buffer
+
+	if l.Debug {
+		buf.WriteString("[DEBUG]")
+	}
 
 	buf.WriteString("Serving route: ")
 
@@ -79,12 +99,23 @@ func printRequest(ctx context.Context, r *http.Request) {
 	// Request details
 	buf.WriteString("for ")
 	colorWrite(&buf, bMagenta, "%s ", r.Method)
-	colorWrite(&buf, bBlue, "%q", r.URL.String())
 
+	urlStr := r.URL.String()
+
+	// if not in debug mode, remove Query params from logging as not to include any
+	// sensitive information inadvertantly into user's logs
+	if !l.Debug && r.URL.RawQuery != "" {
+		tempURL := &url.URL{}
+		*tempURL = *r.URL
+		tempURL.RawQuery = "<omitted>"
+		urlStr = tempURL.String()
+	}
+
+	colorWrite(&buf, bBlue, "%q", urlStr)
 	log.Print(buf.String())
 }
 
-func printResponse(w mutil.WriterProxy, delta time.Duration) {
+func (l *Logger) printResponse(w mutil.WriterProxy, delta time.Duration) {
 	var buf bytes.Buffer
 
 	buf.WriteString("Returning HTTP ")

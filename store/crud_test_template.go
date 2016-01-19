@@ -2,12 +2,8 @@ package set
 
 import "github.com/clipperhouse/typewriter"
 
-var templates = typewriter.TemplateSlice{
-	store,
-}
-
-var store = &typewriter.Template{
-	Name: "Store",
+var crudTest = &typewriter.Template{
+	Name: "CRUD Test",
 	Text: `
 // {{.Name}}Store holds state for {{.Name}} Storage actions
 type {{.Name}}Store struct{}

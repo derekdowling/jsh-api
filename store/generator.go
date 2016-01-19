@@ -17,6 +17,11 @@ func init() {
 	}
 }
 
+var templates = typewriter.TemplateSlice{
+	crud,
+	crudTest,
+}
+
 // StoreWriter implements gen/TypeWriter
 type StoreWriter struct{}
 

@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	err := typewriter.Register(NewStoreWriter())
+	err := typewriter.Register(NewCRUDWriter())
 	if err != nil {
 		panic(err)
 	}
@@ -22,21 +22,21 @@ var templates = typewriter.TemplateSlice{
 	crudTest,
 }
 
-// StoreWriter implements gen/TypeWriter
-type StoreWriter struct{}
+// CRUDWriter implements gen/TypeWriter
+type CRUDWriter struct{}
 
-// NewStoreWriter is a simple constructor
-func NewStoreWriter() *StoreWriter {
-	return &StoreWriter{}
+// NewCRUDWriter is a simple constructor
+func NewCRUDWriter() *CRUDWriter {
+	return &CRUDWriter{}
 }
 
-// Name sets the gen tag for the StoreWriter
-func (sw *StoreWriter) Name() string {
-	return "store"
+// Name sets the gen tag for the CRUDWriter
+func (cw *CRUDWriter) Name() string {
+	return "CRUDWriter"
 }
 
 // Imports represent the dependencies of the generated code.
-func (sw *StoreWriter) Imports(t typewriter.Type) (result []typewriter.ImportSpec) {
+func (cw *CRUDWriter) Imports(t typewriter.Type) (result []typewriter.ImportSpec) {
 
 	imports := []typewriter.ImportSpec{
 		typewriter.ImportSpec{
@@ -51,7 +51,7 @@ func (sw *StoreWriter) Imports(t typewriter.Type) (result []typewriter.ImportSpe
 	return result
 }
 
-func (sw *StoreWriter) Write(w io.Writer, t typewriter.Type) error {
+func (cw *CRUDWriter) Write(w io.Writer, t typewriter.Type) error {
 	tag, found := t.FindTag(sw)
 	if !found {
 		log.Printf("Store type '%s' not found\n", t.Name)
@@ -64,7 +64,6 @@ func (sw *StoreWriter) Write(w io.Writer, t typewriter.Type) error {
 	}
 
 	tmpl, err := templates.ByTag(t, tag)
-
 	if err != nil {
 		return err
 	}

@@ -230,15 +230,15 @@ func (res *Resource) relationshipHandler(
 	res.addRoute(get, relationshipMatcher)
 }
 
-// Mutate allows you to add custom actions to your resource types, it uses the
+// Action allows you to add custom actions to your resource types, it uses the
 // GET /(prefix/)resourceTypes/:id/<actionName> path format
-func (res *Resource) Mutate(actionName string, storage store.Get) {
+func (res *Resource) Action(actionName string, storage store.Get) {
 	matcher := path.Join(patID, actionName)
 
 	res.HandleFuncC(
 		pat.Get(matcher),
 		func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			res.mutateHandler(ctx, w, r, storage)
+			res.actionHandler(ctx, w, r, storage)
 		},
 	)
 
@@ -330,7 +330,7 @@ func (res *Resource) toManyHandler(ctx context.Context, w http.ResponseWriter, r
 }
 
 // All HTTP Methods for /resources/:id/<mutate>
-func (res *Resource) mutateHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Get) {
+func (res *Resource) actionHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, storage store.Get) {
 	id := pat.Param(ctx, "id")
 
 	response, err := storage(ctx, id)

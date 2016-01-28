@@ -66,10 +66,13 @@ The prefix parameter causes all routes created within the resource to be prefixe
 */
 func NewResource(resourceType string) *Resource {
 	return &Resource{
-		Mux:           goji.NewMux(),
+		// Mux is a goji.SubMux, inherits context from parent Mux
+		Mux: goji.SubMux(),
+		// Type of the resource, makes no assumptions about plurality
 		Type:          resourceType,
 		Relationships: map[string]Relationship{},
-		Routes:        []string{},
+		// A list of registered routes, useful for debugging
+		Routes: []string{},
 	}
 }
 

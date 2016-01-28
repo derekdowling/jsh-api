@@ -33,16 +33,21 @@ func TestAPI(t *testing.T) {
 			server := httptest.NewServer(api)
 			baseURL := server.URL + api.prefix
 
-			_, resp, err := jsc.Fetch(baseURL, testResourceType, "1")
+			Convey("should work with /<resource> routes", func() {
+				_, resp, err := jsc.List(baseURL, testResourceType)
 
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			So(err, ShouldBeNil)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(err, ShouldBeNil)
+			})
 
-			patchObj, err := jsh.NewObject("1", testResourceType, testAttrs)
+			Convey("should work with /<resource>/:id routes", func() {
+				patchObj, err := jsh.NewObject("1", testResourceType, testAttrs)
+				So(err, ShouldBeNil)
 
-			_, resp, patchErr := jsc.Patch(baseURL, patchObj)
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			So(patchErr, ShouldBeNil)
+				_, resp, patchErr := jsc.Patch(baseURL, patchObj)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(patchErr, ShouldBeNil)
+			})
 		})
 	})
 }

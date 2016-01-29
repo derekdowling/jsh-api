@@ -10,11 +10,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const testResourceType = "bars"
+
 func TestAPI(t *testing.T) {
 
 	Convey("API Tests", t, func() {
 
-		resourceType := "foos"
 		api := New("api", true)
 
 		So(api.prefix, ShouldEqual, "/api")
@@ -24,24 +25,29 @@ func TestAPI(t *testing.T) {
 		}
 
 		Convey("->AddResource()", func() {
-			resource := NewMockResource(resourceType, 1, testAttrs)
+			resource := NewMockResource(testResourceType, 1, testAttrs)
 			api.Add(resource)
 
-			So(api.Resources[resourceType], ShouldEqual, resource)
+			So(api.Resources[testResourceType], ShouldEqual, resource)
 
 			server := httptest.NewServer(api)
 			baseURL := server.URL + api.prefix
 
-			_, resp, err := jsc.Fetch(baseURL, resourceType, "1")
+			Convey("should work with /<resource> routes", func() {
+				_, resp, err := jsc.List(baseURL, testResourceType)
 
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			So(err, ShouldBeNil)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(err, ShouldBeNil)
+			})
 
-			patchObj, err := jsh.NewObject("1", resourceType, testAttrs)
+			Convey("should work with /<resource>/:id routes", func() {
+				patchObj, err := jsh.NewObject("1", testResourceType, testAttrs)
+				So(err, ShouldBeNil)
 
-			_, resp, patchErr := jsc.Patch(baseURL, patchObj)
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			So(patchErr, ShouldBeNil)
+				_, resp, patchErr := jsc.Patch(baseURL, patchObj)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(patchErr, ShouldBeNil)
+			})
 		})
 	})
 }

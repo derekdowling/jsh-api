@@ -21,8 +21,8 @@
 		},
 		{
 			"ImportPath": "github.com/derekdowling/jsh-api",
-			"Comment": "0.4.4-2-g67a8ffb",
-			"Rev": "67a8ffb9d0dc81bae141b3543979f27956ca703e"
+			"Comment": "0.4.4-6-ge6a4db2",
+			"Rev": "e6a4db23362ab570c8c47038bbef5101f2520423"
 		},
 		{
 			"ImportPath": "github.com/jtolds/gls",
@@ -45,7 +45,7 @@
 		},
 		{
 			"ImportPath": "goji.io",
-			"Rev": "9f8871d62a1b65a39bd029cd2c1bf457cbc1d2f6"
+			"Rev": "8110ccbc05240c40d43ccb004e0542b3bcbf27da"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",

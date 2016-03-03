@@ -44,3 +44,47 @@ func SendAndLog(ctx context.Context, w http.ResponseWriter, r *http.Request, sen
 		Logger.Printf("Error sending response: %s\n", sendErr.Error())
 	}
 }
+
+// LeveledLogger is a context-aware logger interface that differentiates between
+// log levels (debug, info, warning, error, critical).
+type LeveledLogger interface {
+	Debugf(ctx context.Context, format string, args ...interface{})
+	Infof(ctx context.Context, format string, args ...interface{})
+	Warningf(ctx context.Context, format string, args ...interface{})
+	Errorf(ctx context.Context, format string, args ...interface{})
+	Criticalf(ctx context.Context, format string, args ...interface{})
+}
+
+// StandardLogger is a leveled logger that calls Printf on an std.Logger for all
+// levels except debug. Debug logging can be turned on by setting Debug = true
+type StandardLogger struct {
+	std.Logger
+	Debug bool
+}
+
+// Debugf logs the message to the std.Logger using Printf only if Debug is true
+func (s *StandardLogger) Debugf(ctx context.Context, format string, args ...interface{}) {
+	if s.Debug {
+		s.Printf(format, args...)
+	}
+}
+
+// Infof redirects to Printf of std.Logger
+func (s *StandardLogger) Infof(ctx context.Context, format string, args ...interface{}) {
+	s.Printf(format, args...)
+}
+
+// Warningf redirects to Printf of std.Logger
+func (s *StandardLogger) Warningf(ctx context.Context, format string, args ...interface{}) {
+	s.Printf(format, args...)
+}
+
+// Errorf redirects to Printf of std.Logger
+func (s *StandardLogger) Errorf(ctx context.Context, format string, args ...interface{}) {
+	s.Printf(format, args...)
+}
+
+// Criticalf redirects to Printf of std.Logger
+func (s *StandardLogger) Criticalf(ctx context.Context, format string, args ...interface{}) {
+	s.Printf(format, args...)
+}

@@ -19,28 +19,40 @@ type API struct {
 	Debug     bool
 }
 
-// New initializes a new top level API Resource Handler. The most basic implementation
-// is:
-//
-//	// optionally, set your own logger
-//	jshapi.Logger = yourLogger
-//
-//	// create a new API
-//	api := jshapi.New("<prefix>", nil)
-func New(prefix string, debug bool) *API {
+/*
+New initializes a new top level API Resource Handler without. */
+func New(prefix string) *API {
 
 	// ensure that our top level prefix is "/" prefixed
 	if !strings.HasPrefix(prefix, "/") {
 		prefix = fmt.Sprintf("/%s", prefix)
 	}
 
-	// create our new logger
-	api := &API{
+	// create our new API
+	return &API{
 		Mux:       goji.NewMux(),
 		prefix:    prefix,
 		Resources: map[string]*Resource{},
-		Debug:     debug,
 	}
+}
+
+/*
+Default builds a new top-level API with a few out of the box additions to get people
+started without needing to add a lot of extra functionality.
+
+The most basic implementation is:
+
+	// optionally, set your own logger that can do custom things
+	jshapi.Logger = yourLogger
+
+	// create the API. Specify a http://yourapi/<prefix>/ if required
+	api := jshapi.Default("<prefix>", false)
+	api.Add(yourResource)
+
+*/
+func Default(prefix string, debug bool) *API {
+
+	api := New(prefix)
 
 	// register logger middleware
 	gojilogger := gojilogger.New(Logger, debug)

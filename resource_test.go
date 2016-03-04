@@ -16,7 +16,7 @@ func TestResource(t *testing.T) {
 
 	resource := NewMockResource(testResourceType, 2, testObjAttrs)
 
-	api := New("", true)
+	api := New("")
 	api.Add(resource)
 
 	server := httptest.NewServer(api)
@@ -95,7 +95,7 @@ func TestActionHandler(t *testing.T) {
 	}
 	resource.Action("testAction", handler)
 
-	api := New("", true)
+	api := New("")
 	api.Add(resource)
 
 	server := httptest.NewServer(api)
@@ -129,7 +129,7 @@ func TestToOne(t *testing.T) {
 	subResourceType := "baz"
 	resource.ToOne(subResourceType, relationshipHandler)
 
-	api := New("", true)
+	api := New("")
 	api.Add(resource)
 
 	server := httptest.NewServer(api)
@@ -184,7 +184,7 @@ func TestToMany(t *testing.T) {
 	subResourceType := "baz"
 	resource.ToMany(subResourceType, relationshipHandler)
 
-	api := New("", true)
+	api := New("")
 	api.Add(resource)
 
 	server := httptest.NewServer(api)

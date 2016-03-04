@@ -16,7 +16,7 @@ func TestAPI(t *testing.T) {
 
 	Convey("API Tests", t, func() {
 
-		api := New("api", true)
+		api := New("api")
 
 		So(api.prefix, ShouldEqual, "/api")
 

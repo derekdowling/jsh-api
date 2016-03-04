@@ -106,14 +106,12 @@ resource.Action("reset", resetAction)
 
 * Default Request, Response, and 5XX Auto-Logging
 
-## Storage Driver Example
+## Working With Storage Interfaces
 
-Here is a basic example of how you might implement a CRUD usable
-[Storage Driver](https://godoc.org/github.com/derekdowling/jsh-api/store#CRUD)
-for a given resource using [jsh](https://godoc.org/github.com/derekdowling/go-json-spec-handler)
+Below is a basic example of how one might implement parts of a [CRUD Storage](https://godoc.org/github.com/derekdowling/jsh-api/store#CRUD)
+interface for a basic user resource using [jsh](https://godoc.org/github.com/derekdowling/go-json-spec-handler)
 for Save and Update. This should give you a pretty good idea of how easy it is to
 implement the Storage driver with jsh.
-
 
 ```go
 type User struct {

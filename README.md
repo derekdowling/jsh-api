@@ -67,8 +67,6 @@ Quickly build resource APIs for:
 * DELETE /resources/:id
 * PATCH /resources/:id
 
-via:
-
 ```go
 resourceStorage := &ResourceStorage{}
 resource := jshapi.NewCRUDResource("resources", resourceStorage)
@@ -81,8 +79,6 @@ Routing for relationships too:
 * GET /resources/:id/relationships/otherResource[s]
 * GET /resources/:id/otherResource[s]
 
-via:
-
 ```go
 resourceStorage := &ResourceStorage{}
 resource := jshapi.NewResource("resources", resourceStorage)
@@ -93,8 +89,6 @@ resource.ToMany("bar", barToManyStorage)
 #### Custom Actions
 
 * GET /resources/:id/<action>
-* 
-via:
 
 ```go
 resourceStorage := &ResourceStorage{}

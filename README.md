@@ -50,36 +50,61 @@ http.ListenAndServe("localhost:8000", api)
 
 ## Feature Overview
 
-### Fast CRUD Implementation
+There are a few things you should know about JSHAPI. First, this project is maintained with emphasis on these two guiding principles:
+
+* reduce JSONAPI boilerplate in your code as much as possible
+* keep separation of concerns in mind, let developers decide and customize as much as possible
+
+The other major point is that this project uses a small set of storage interfaces that make handling API actions endpoint simple and consistent. In each of the following examples, these storage interfaces are utilized. For more information about how these work, see the [Storage Example](#storage-driver-example). 
+
+### Simple Default CRUD Implementation
 
 Quickly build resource APIs for:
 
-```
-POST /resources
-GET /resources
-GET /resources/:id
-DELETE /resources/:id
-PATCH /resources/:id
+* POST /resources
+* GET /resources
+* GET /resources/:id
+* DELETE /resources/:id
+* PATCH /resources/:id
+
+via:
+
+```go
+resourceStorage := &ResourceStorage{}
+resource := jshapi.NewCRUDResource("resources", resourceStorage)
 ```
 
 ### Relationships
 
 Routing for relationships too:
 
-```
-GET /resources/:id/relationships/otherResource(s)
-GET /resources/:id/otherResource(s)
+* GET /resources/:id/relationships/otherResource[s]
+* GET /resources/:id/otherResource[s]
+
+via:
+
+```go
+resourceStorage := &ResourceStorage{}
+resource := jshapi.NewResource("resources", resourceStorage)
+resource.ToOne("foo", fooToOneStorage)
+resource.ToMany("bar", barToManyStorage)
 ```
 
-### Mutations
+### Custom Actions
 
+* GET /resources/:id/<action>
+* 
+via:
+
+```go
+resourceStorage := &ResourceStorage{}
+resource := jshapi.NewResource("resources", resourceStorage)
+resource.Action("reset", resetAction)
 ```
-GET /resources/:id/<action>
-```
 
-### Other
+### Other Features
 
-* Request, Response, and 5XX Auto-Logging
+* Default Request, Response, and 5XX Auto-Logging
 
 ## Storage Driver Example
 

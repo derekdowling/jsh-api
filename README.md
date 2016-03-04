@@ -57,7 +57,7 @@ There are a few things you should know about JSHAPI. First, this project is main
 
 The other major point is that this project uses a small set of storage interfaces that make handling API actions endpoint simple and consistent. In each of the following examples, these storage interfaces are utilized. For more information about how these work, see the [Storage Example](#storage-driver-example). 
 
-### Simple Default CRUD Implementation
+#### Simple Default CRUD Implementation
 
 Quickly build resource APIs for:
 
@@ -74,7 +74,7 @@ resourceStorage := &ResourceStorage{}
 resource := jshapi.NewCRUDResource("resources", resourceStorage)
 ```
 
-### Relationships
+#### Relationships
 
 Routing for relationships too:
 
@@ -90,7 +90,7 @@ resource.ToOne("foo", fooToOneStorage)
 resource.ToMany("bar", barToManyStorage)
 ```
 
-### Custom Actions
+#### Custom Actions
 
 * GET /resources/:id/<action>
 * 
@@ -102,7 +102,7 @@ resource := jshapi.NewResource("resources", resourceStorage)
 resource.Action("reset", resetAction)
 ```
 
-### Other Features
+#### Other Features
 
 * Default Request, Response, and 5XX Auto-Logging
 

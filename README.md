@@ -37,7 +37,10 @@ import github.com/derekdowling/jsh-api
 api := jshapi.New("<prefix>")
 
 // add a custom send handler
-jshapi.SendHandler = customHandler
+jshapi.SendHandler = func(c context.Context, w http.ResponseWriter, r *http.Request, sendable jsh.Sendable) {
+    // do some custom logging, or manipulation
+    jsh.Send(w, r, sendable)
+}
 
 // add top level Goji Middleware
 api.UseC(yourTopLevelAPIMiddleware)

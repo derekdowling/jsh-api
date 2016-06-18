@@ -310,6 +310,12 @@ func (res *Resource) patchHandler(ctx context.Context, w http.ResponseWriter, r 
 		return
 	}
 
+	id := pat.Param(ctx, "id")
+	if id != parsedObject.ID {
+		SendHandler(ctx, w, r, jsh.InputError("Request ID does not match URL's", "id"))
+		return
+	}
+
 	object, err := storage(ctx, parsedObject)
 	if err != nil && reflect.ValueOf(err).IsNil() == false {
 		SendHandler(ctx, w, r, err)

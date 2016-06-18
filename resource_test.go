@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/derekdowling/go-json-spec-handler"
@@ -67,12 +68,28 @@ func TestResource(t *testing.T) {
 		})
 
 		Convey("->Patch()", func() {
-			object := sampleObject("1", testResourceType, testObjAttrs)
-			doc, resp, err := jsc.Patch(baseURL, object)
 
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			So(err, ShouldBeNil)
-			So(doc.Data[0].ID, ShouldEqual, "1")
+			Convey("should reject requests with ID mismatch", func() {
+				object := sampleObject("1", testResourceType, testObjAttrs)
+				request, err := jsc.PatchRequest(baseURL, object)
+				So(err, ShouldBeNil)
+				// Manually replace resource ID in URL to be invalid
+				request.URL.Path = strings.Replace(request.URL.Path, "1", "2", 1)
+				doc, resp, err := jsc.Do(request, jsh.ObjectMode)
+
+				So(resp.StatusCode, ShouldEqual, 422)
+				So(err, ShouldBeNil)
+				So(doc, ShouldNotBeNil)
+			})
+
+			Convey("should accept patch requests", func() {
+				object := sampleObject("1", testResourceType, testObjAttrs)
+				doc, resp, err := jsc.Patch(baseURL, object)
+
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(err, ShouldBeNil)
+				So(doc.Data[0].ID, ShouldEqual, "1")
+			})
 		})
 
 		Convey("->Delete()", func() {

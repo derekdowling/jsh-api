@@ -1,5 +1,11 @@
 # JSH-API
 
+## THIS REPO IS DEPRECATED!
+
+The official version of jsh-api now lives [here](https://github.com/derekdowling/go-json-spec-handler/tree/master/jsh-api) as a submodule of JSH.
+
+---
+
 [![GoDoc](https://godoc.org/github.com/derekdowling/go-json-spec-handler?status.png)](https://godoc.org/github.com/derekdowling/jsh-api)
 [![Build Status](https://travis-ci.org/derekdowling/jsh-api.svg?branch=master)](https://travis-ci.org/derekdowling/jsh-api)
 [![Go Report Card](http://goreportcard.com/badge/manyminds/api2go)](http://goreportcard.com/report/derekdowling/jsh-api)

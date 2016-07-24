@@ -2,6 +2,8 @@
 // in order to build a storage driver
 package store
 
+//go:generate gen
+
 import (
 	"github.com/derekdowling/go-json-spec-handler"
 	"golang.org/x/net/context"
